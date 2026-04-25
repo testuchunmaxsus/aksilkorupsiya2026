@@ -1,11 +1,17 @@
-"""AuksionWatch Telegram bot — minimal investigative interface.
+"""AuksionWatch Telegram bot — fuqaro uchun tezkor tergov interfeysi.
 
-Commands:
-  /start          - greet + list commands
-  /check <lot_id> - lot risk report
-  /firma <hint>   - seller history
-  /report         - today's top red flags
-  /help           - show commands
+Bizning FastAPI backend'ga ustqurma — saytga kirmasdan ham ishlatish mumkin.
+Stateless: bot xotirada hech narsa saqlamaydi, har komanda backend'ga so'rov yuboradi.
+
+Komandalar:
+  /start          — salomlashish + komandalar ro'yxati
+  /check <lot_id> — lot xavf tahlili (5 sek)
+  /firma <hint>   — sotuvchi tarixi (davaktiv/court/bank)
+  /report         — bugungi TOP 8 qizil bayroq
+  /stats          — umumiy statistika + TOP 5 hudud
+  /help           — yordam matni
+
+Auto-lookup: agar foydalanuvchi shunchaki raqam yuborsa (12345678), avtomatik /check ishlaydi.
 """
 import asyncio
 import os
@@ -23,17 +29,19 @@ from aiogram.types import (
     Message,
 )
 
+# .env faylidan BOT_TOKEN va boshqa env'larni yuklash (agar mavjud bo'lsa)
 try:
     from dotenv import load_dotenv
-
     load_dotenv(Path(__file__).parent / ".env")
 except ImportError:
     pass
 
+# Konfiguratsiya — env yoki defaults
 BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
-API_BASE = os.getenv("API_BASE", "http://127.0.0.1:8000").strip()
-WEB_BASE = os.getenv("WEB_BASE", "http://localhost:3000").strip()
+API_BASE = os.getenv("API_BASE", "http://127.0.0.1:8000").strip()  # FastAPI backend manzili
+WEB_BASE = os.getenv("WEB_BASE", "http://localhost:3000").strip()  # Frontend manzili (inline tugmalar uchun)
 
+# Token yo'q bo'lsa — foydali xato xabari va chiqish
 if not BOT_TOKEN:
     print("[bot] ERROR: BOT_TOKEN env var not set")
     print("    1. Telegram'da @BotFather ga kiring")
@@ -43,6 +51,7 @@ if not BOT_TOKEN:
     sys.exit(1)
 
 
+# ISO-style hudud kodlari → o'zbekcha nom (chat'da ko'rsatish uchun)
 REGION_NAMES = {
     "UZ-TK": "Toshkent shahri",
     "UZ-TO": "Toshkent viloyati",
@@ -62,6 +71,7 @@ REGION_NAMES = {
 
 
 def fmt_uzs(v):
+    """Pul miqdorini o'qib bo'lish formatga o'gir: 1230000 → '1.23 mln so''m'."""
     if v is None:
         return "—"
     if v >= 1e12:
@@ -74,10 +84,12 @@ def fmt_uzs(v):
 
 
 def risk_emoji(level: str) -> str:
+    """Risk darajasi → emoji (chat ko'rinishi)."""
     return {"high": "🚩", "medium": "⚠️", "low": "✅"}.get(level, "•")
 
 
 def risk_label(level: str) -> str:
+    """Risk darajasi → o'zbekcha matn."""
     return {"high": "YUQORI XAVF", "medium": "O'RTA XAVF", "low": "OZ XAVF"}.get(
         level, level.upper()
     )
@@ -104,6 +116,10 @@ dp = Dispatcher()
 
 
 async def api_get(path: str):
+    """Backend FastAPI'ga GET so'rov — JSON natija qaytaradi.
+
+    Xato bo'lsa httpx exception ko'taradi (chaqiruvchi xandelaydi).
+    """
     async with httpx.AsyncClient(timeout=15) as client:
         r = await client.get(f"{API_BASE}{path}")
         r.raise_for_status()
@@ -111,11 +127,20 @@ async def api_get(path: str):
 
 
 def _is_public_url(u: str) -> bool:
-    """Telegram requires public HTTPS or HTTP with FQDN — localhost rejected."""
+    """Telegram inline tugmalar uchun URL public bo'lishi shart.
+
+    localhost yoki 127.0.0.1 — ishlamaydi (Telegram serveri bunday URL'ni rad qiladi).
+    Production'da Railway URL bo'lsa ✓, develop'da yo'q.
+    """
     return u.startswith(("http://", "https://")) and "localhost" not in u and "127.0.0.1" not in u
 
 
 def lot_keyboard(lot_id: int) -> InlineKeyboardMarkup:
+    """Lot ostida ko'rsatiladigan inline tugmalar.
+
+    Doim e-auksion manba linki bor (HTTPS).
+    Web'da batafsil tugmasi faqat WEB_BASE public bo'lsa qo'shiladi.
+    """
     rows = [
         [
             InlineKeyboardButton(
@@ -135,19 +160,29 @@ def lot_keyboard(lot_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
+# ───────── KOMANDA HANDLERLARI ─────────
+
 @dp.message(CommandStart())
 async def start(msg: Message):
+    """/start — botni birinchi marta ishga tushirish, salomlashish."""
     await msg.answer(WELCOME, disable_web_page_preview=True)
 
 
 @dp.message(Command("help"))
 async def help_cmd(msg: Message):
+    """/help — komandalar ro'yxatini qayta ko'rsatish."""
     await msg.answer(WELCOME, disable_web_page_preview=True)
 
 
 @dp.message(Command("check"))
 async def check(msg: Message, command: CommandObject):
+    """/check <lot_id> — bitta lot uchun risk hisobotini chiqarish.
+
+    Backend'dan /api/lots/{id} chaqirib, flag'lar va AI xulosani ko'rsatadi.
+    Inline tugmalar: e-auksion manba + Web'da batafsil.
+    """
     arg = (command.args or "").strip()
+    # Argument bo'sh yoki raqam emas — yordam ko'rsatish
     if not arg or not arg.lstrip("#").isdigit():
         await msg.answer(
             "❓ Lot raqamini kiriting:\n<code>/check 90000000</code>"
@@ -196,6 +231,11 @@ async def check(msg: Message, command: CommandObject):
 
 @dp.message(Command("firma"))
 async def firma(msg: Message, command: CommandObject):
+    """/firma <hint> — sotuvchi tarixi va statistikasi.
+
+    hint = davaktiv / court / bank / individual.
+    Backend'dan /api/firms/{hint} chaqiradi va TOP 5 xavfli lotni ko'rsatadi.
+    """
     arg = (command.args or "").strip().lower()
     if not arg:
         await msg.answer(
@@ -248,6 +288,7 @@ async def firma(msg: Message, command: CommandObject):
 
 @dp.message(Command("report"))
 async def report(msg: Message):
+    """/report — bugungi TOP 8 qizil bayroq + umumiy statistika."""
     try:
         data = await api_get("/api/red-flags/today?limit=8")
         stats = await api_get("/api/stats")
@@ -287,6 +328,7 @@ async def report(msg: Message):
 
 @dp.message(Command("stats"))
 async def stats_cmd(msg: Message):
+    """/stats — umumiy raqamlar (jami lot, high/medium, qiymat) + TOP 5 xavfli hudud."""
     try:
         s = await api_get("/api/stats")
     except Exception as e:
@@ -315,17 +357,23 @@ async def stats_cmd(msg: Message):
 
 @dp.message(F.text.regexp(r"^\d{6,}$"))
 async def auto_lookup(msg: Message):
-    """If user just sends a number, treat it as lot ID."""
+    """Auto-lookup: foydalanuvchi shunchaki raqam yuborsa avtomatik /check ishlatadi.
+
+    Misol: 90000000 → /check 90000000.
+    UX'ni soddalashtirish uchun (foydalanuvchi 'check' yozishini eslab o'tirmaydi).
+    """
     fake_command = CommandObject(prefix="/", command="check", args=msg.text)
     await check(msg, fake_command)
 
 
 async def main():
+    """Botni ishga tushirish — long polling rejimida."""
     print(f"[bot] starting AuksionWatch bot")
     print(f"[bot] API base: {API_BASE}")
     print(f"[bot] Web base: {WEB_BASE}")
     me = await bot.get_me()
     print(f"[bot] @{me.username} ({me.first_name})")
+    # drop_pending_updates=True — restart vaqtida yig'ilib qolgan eski update'larni tashlaydi
     await dp.start_polling(bot, drop_pending_updates=True)
 
 

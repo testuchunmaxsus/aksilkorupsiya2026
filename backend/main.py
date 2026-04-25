@@ -1,4 +1,9 @@
-"""FastAPI backend for AuksionWatch."""
+"""FastAPI backend for AuksionWatch.
+
+REST API endpointlari + auto-seed (Railway production'da DB bo'sh bo'lsa
+lots_parsed.json'dan avtomatik to'ldiradi). 18+ endpoint bilan frontend va
+Telegram bot xizmat ko'rsatadi.
+"""
 import csv
 import io
 import os
@@ -12,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select, func, or_
 
+# Loyiha root'ini sys.path'ga qo'shamiz — relative import'lar uchun
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from backend.db import engine, init_db, get_session
@@ -20,41 +26,52 @@ from backend.models import Lot
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """App lifecycle hook — startup va shutdown'da bajariladigan ish.
+
+    Startup'da:
+      1. DB jadvalni yaratish + ALTER TABLE migration
+      2. AUTOSEED=1 va DB bo'sh bo'lsa — lots_parsed.json'dan import + rescore
+    """
     print(f"[startup] AuksionWatch v1.2 — initializing", flush=True)
     init_db()
     print(f"[startup] DB initialized · DATABASE_URL host hint: {os.getenv('DATABASE_URL', 'sqlite-default').split('@')[-1][:60]}", flush=True)
 
+    # AUTOSEED=1 (default) — Railway production'da birinchi boot'da seed bo'ladi
     autoseed = os.getenv("AUTOSEED", "1")
     print(f"[startup] AUTOSEED={autoseed}", flush=True)
     if autoseed != "0":
         try:
+            # DB'da nechta lot borligini sanab ko'ramiz
             with Session(engine) as session:
                 count = session.exec(select(func.count(Lot.id))).one()
             print(f"[startup] existing lot count: {count}", flush=True)
 
+            # Seed manbasi — image ichida lots_parsed.json (~2.7MB, 1993 lot)
             seed_path = Path(__file__).parent.parent / "data" / "lots_parsed.json"
             print(f"[startup] seed file exists: {seed_path.exists()} ({seed_path})", flush=True)
 
+            # Faqat DB BO'SH bo'lsa va seed fayl mavjud bo'lsa — import qilamiz
             if count == 0 and seed_path.exists():
                 print(f"[startup] DB empty — running reingest...", flush=True)
                 from backend.reingest_v11 import main as reingest_main  # noqa
-                reingest_main()
+                reingest_main()  # JSON → DB
                 print(f"[startup] reingest done — running rescore...", flush=True)
                 from backend.rescore_all import main as rescore_main
-                rescore_main()
+                rescore_main()   # Risk score'ni qayta hisoblash + categories
                 print(f"[startup] auto-seed complete", flush=True)
             elif count > 0:
                 print(f"[startup] DB already has {count} lots — skipping seed", flush=True)
             else:
                 print(f"[startup] seed file missing — cannot seed", flush=True)
         except Exception as e:
+            # Seed muvaffaqiyatsiz bo'lsa app'ni to'xtatmaslik — log qoldiramiz
             import traceback
             print(f"[startup] auto-seed FAILED: {e}", flush=True)
             traceback.print_exc()
-    yield
+    yield  # App ishga tushadi
 
 
-# CORS — env-driven allowlist (default: open for public read API)
+# CORS — env'dan allowlist (production'da aniq domain, default: ochiq read-only API)
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 
 app = FastAPI(
@@ -76,12 +93,13 @@ app.add_middleware(
 
 @app.get("/healthz")
 def healthz():
-    """Railway healthcheck endpoint."""
+    """Railway healthcheck endpoint — har 30 sekundda Railway tekshiradi."""
     return {"status": "ok"}
 
 
 @app.get("/")
 def root():
+    """API root — versiya va kategoriyalar haqida ma'lumot."""
     return {
         "name": "AuksionWatch API",
         "version": "1.1.0",
@@ -98,15 +116,16 @@ def root():
 
 @app.get("/api/lots")
 def list_lots(
-    region: Optional[str] = None,
-    auction_type: Optional[str] = None,
-    risk_level: Optional[str] = None,
-    risk_min: float = 0,
-    seller_id: Optional[int] = None,
-    seller_hint: Optional[str] = None,
-    q: Optional[str] = None,
-    limit: int = Query(50, ge=1, le=2000),
-    offset: int = Query(0, ge=0),
+    # ── Filtr parametrlari (hammasi ixtiyoriy) ──
+    region: Optional[str] = None,           # masalan UZ-FA
+    auction_type: Optional[str] = None,     # open / closed / unknown
+    risk_level: Optional[str] = None,       # high / medium / low
+    risk_min: float = 0,                    # minimum risk_score
+    seller_id: Optional[int] = None,        # aniq sotuvchi
+    seller_hint: Optional[str] = None,      # davaktiv / court / bank
+    q: Optional[str] = None,                # qidiruv (title/address/seller)
+    limit: int = Query(50, ge=1, le=2000),  # max 2000 (eksport uchun)
+    offset: int = Query(0, ge=0),           # pagination
     session: Session = Depends(get_session),
 ):
     stmt = select(Lot).where(Lot.risk_score >= risk_min)

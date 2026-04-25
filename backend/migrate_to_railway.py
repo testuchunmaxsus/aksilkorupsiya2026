@@ -1,13 +1,3 @@
-"""Bulk-migrate local SQLite Lot rows into Railway Postgres.
-
-Usage (run locally, NOT inside Railway container):
-    python -m backend.migrate_to_railway "postgresql://postgres:PASS@metro.proxy.rlwy.net:25130/railway"
-
-Or set RAILWAY_DATABASE_URL env and just run without args.
-
-Reads from data/auksionwatch.db (local SQLite) and inserts/updates rows in
-Railway Postgres via SQLAlchemy ORM (type-safe).
-"""
 import os
 import sys
 from pathlib import Path

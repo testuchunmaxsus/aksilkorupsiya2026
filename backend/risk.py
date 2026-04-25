@@ -1,24 +1,27 @@
-"""Rules-based risk scoring engine — v1.2 with categories + PEP layer.
+"""Rule-based risk scoring engine — v1.2 + kategoriyalar + PEP qatlami.
 
-5 international categories (OECD/OCP standard):
-  A — Low Transparency
-  B — Collusion
-  C — Bid-Rigging
-  D — Fraud
-  E — Low Competition
+Bu modul har bir lot uchun 18+ qoida bo'yicha risk ballini hisoblaydi.
+Ballar 5 ta xalqaro toifaga (OECD/OCP standart) bo'linadi:
+  A — Low Transparency  (past shaffoflik)
+  B — Collusion         (kelishuv xavflari)
+  C — Bid-Rigging       (auksion soxtaligi)
+  D — Fraud             (firibgarlik)
+  E — Low Competition   (past raqobat)
 
-Each rule is tagged with category, score, weight, and provenance (source +
-formula), so the UI can explain WHY a flag fires.
+Har bir signal ortida formula, manba va xalqaro standart havolasi bor —
+shu sabab UI'da "qora quti" emas, izohlanadigan AI.
 """
 from typing import Iterable
 from datetime import datetime
 import re
 
+# PEP (mansabdor) ro'yxati — singleton, FATF R12 bo'yicha screening
 from backend.pep import get_registry, last_name
 
 
-# International references for explainability.
-# Each entry: short title, primary source, methodology, e-auksion data fields used.
+# ───────── XALQARO MANBALAR (explainability uchun) ─────────
+# Har signal uchun: qisqa tavsif, asosiy standart, formula, ishlatilgan e-auksion maydonlari.
+# UI lot detail sahifasida har red flag ostida shu manbalar ko'rinadi.
 SOURCE = {
     "closed_auction": {
         "ref": "OECD A · UNCAC Art.9 · Fazekas NOAP",
@@ -174,8 +177,10 @@ SOURCE = {
 }
 
 
-# Weights — based on Fazekas CRI, OECD, and World Bank consensus.
-# 1.0 = standard. Higher = more reliable corruption indicator.
+# ───────── VAZNLAR ─────────
+# Har signalning ishonchlilik darajasi (Fazekas CRI, OECD, World Bank konsensusi).
+# 1.0 = standart. Yuqoriroq = ishonchli signal (Fazekas SBI 0.71 CPI bilan korrelyatsiya).
+# Final score = score × weight.
 WEIGHT = {
     "single_bidder": 1.2,
     "combo_single_closed": 1.3,
@@ -206,7 +211,14 @@ WEIGHT = {
 
 
 def parse_date_uz(s: str | None) -> datetime | None:
-    """Parse '12.05.2026 10:00' or '12.05.2026' or '2026-05-12 10:00:00'."""
+    """O'zbek formatdagi sana matnini datetime ga o'gir.
+
+    Qabul qiladigan formatlar:
+      '12.05.2026 10:00'        — kun.oy.yil soat:daqiqa
+      '12.05.2026'              — faqat sana
+      '2026-05-12 10:00:00'     — ISO format (Excel'dan)
+      '2026-05-12 10:00:00.0'   — millisekund bilan (Excel pandas)
+    Tushuna olmasa None qaytaradi (xato chiqarmaydi)."""
     if not s or not isinstance(s, str):
         return None
     s = s.strip()
@@ -238,9 +250,19 @@ def evaluate(
     seller_stats: dict | None = None,
     family_clusters: set[str] | None = None,
 ) -> dict:
-    """Evaluate one lot, return {score, level, flags} with categorized flags."""
+    """Bir lotni 18+ qoida bo'yicha tahlil qil va risk balini qaytaradi.
+
+    Args:
+        lot:             Lot ma'lumoti dict (start_price, auction_type, times_auctioned, ...)
+        region_stats:    {region: {median: <float>}} — hudud bo'yicha narx benchmark
+        seller_stats:    {seller_id: {total: int, closed_pct: float}} — sotuvchi tarixi
+        family_clusters: 3+ ta bir xil familiyali sotuvchilar to'plami (PEP layer)
+
+    Returns:
+        {score: 0-100, level: low/medium/high, flags: [...], categories: {A..E: 0-100}}
+    """
     flags: list[dict] = []
-    pep_registry = get_registry()
+    pep_registry = get_registry()  # PEP watchlist singleton
 
     # ───────── A. LOW TRANSPARENCY ─────────
     is_closed = lot.get("auction_type") == "closed"
@@ -543,23 +565,27 @@ def evaluate(
                 ),
             })
 
-    # ───────── Attach provenance / explainability ─────────
+    # ───────── Provenance / izoh ma'lumotlarini biriktirish ─────────
+    # Har flag'ga manba (OECD/Fazekas/...) va formula qo'shamiz — UI'da ko'rsatamiz.
     for f in flags:
         meta = SOURCE.get(f["type"])
         if meta:
-            f["ref"] = meta.get("ref")
-            f["ref_url"] = meta.get("url")
-            f["formula"] = meta.get("formula")
-            f["fields"] = meta.get("fields")
+            f["ref"] = meta.get("ref")          # Qisqa standart nomi
+            f["ref_url"] = meta.get("url")      # Manba URL (bosib o'tish mumkin)
+            f["formula"] = meta.get("formula")  # Matematik shart (masalan auction_cnt ≤ 1)
+            f["fields"] = meta.get("fields")    # Qaysi e-auksion maydonlari ishlatilgan
         f["weight"] = WEIGHT.get(f["type"], 1.0)
         f["weighted_score"] = round(f["score"] * f["weight"], 1)
 
-    # ───────── Score computation ─────────
+    # ───────── Yakuniy ball (score) ─────────
+    # Barcha flag'lar weighted ballarining yig'indisi, 100 da kep qilinadi.
     weighted = sum(f["weighted_score"] for f in flags)
     score = min(100, weighted)
+    # Daraja: 0-39 low, 40-69 medium, 70-100 high
     level = "low" if score < 40 else ("medium" if score < 70 else "high")
 
-    # Per-category sub-scores
+    # ───────── 5 toifa bo'yicha alohida sub-ballar ─────────
+    # Frontend'da "Bu lot 4/5 toifada signal beradi" ko'rsatish uchun
     cat_scores = {"A": 0, "B": 0, "C": 0, "D": 0, "E": 0}
     for f in flags:
         cat = f.get("category", "A")
@@ -575,6 +601,11 @@ def evaluate(
 
 
 def compute_region_stats(lots: Iterable[dict]) -> dict:
+    """Hudud bo'yicha median narx benchmark — narx anomaliyasini topish uchun.
+
+    Misol: UZ-FA da median 100M so'm bo'lsa, lot 30M dan past = deeply_underpriced.
+    Faqat 3+ lot bor hududlar hisoblanadi (statistik ishonchlilik).
+    """
     from collections import defaultdict
     import statistics
     by_region = defaultdict(list)
@@ -584,15 +615,20 @@ def compute_region_stats(lots: Iterable[dict]) -> dict:
     return {
         r: {"median": statistics.median(prices), "count": len(prices)}
         for r, prices in by_region.items()
-        if len(prices) >= 3
+        if len(prices) >= 3  # juda kam ma'lumotli hududlarni o'tkazib yuboradi
     }
 
 
 def compute_seller_stats(lots: Iterable[dict]) -> dict:
+    """Sotuvchi bo'yicha statistika: jami lotlar va yopiq auksion ulushi.
+
+    monopoly_seller (1000+) va dominant_seller (300+) signalida ishlatiladi.
+    seller_closed_pattern uchun closed_pct kerak.
+    """
     from collections import defaultdict
     counts = defaultdict(lambda: {"total": 0, "closed": 0})
     for lot in lots:
-        # Seller key — prefer numeric seller_id, fallback to seller_hint
+        # Sotuvchi kaliti — avval seller_id (raqamli), bo'lmasa seller_hint
         key = lot.get("seller_id") or lot.get("seller_hint")
         if key is None:
             continue
