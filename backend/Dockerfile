@@ -20,8 +20,8 @@ COPY backend/ ./backend/
 COPY data/pep_watchlist.json ./data/pep_watchlist.json
 COPY data/lots_parsed.json ./data/lots_parsed.json
 
-# Persistent SQLite volume mount point
-VOLUME ["/app/data"]
+# NOTE: persistent storage is provided by Railway Volumes (mounted at /app/data via dashboard).
+# Do NOT use Docker `VOLUME` here — Railway rejects it.
 
 ENV DATABASE_URL="sqlite:////app/data/auksionwatch.db" \
     ALLOWED_ORIGINS="*" \
