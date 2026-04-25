@@ -1,34 +1,41 @@
+// Backend API'ning bazaviy URL'i — production'da Railway domain, develop'da localhost
 export const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
+// Risk engine'dan kelgan asosiy flag obyekti
 export type Flag = {
-  type: string;
-  score: number;
-  title: string;
-  desc: string;
+  type: string;     // "single_bidder", "monopoly_seller", ...
+  score: number;    // bu flag uchun ball
+  title: string;    // foydalanuvchi ko'radigan sarlavha
+  desc: string;     // tushuntirish matni
 };
 
+// PEP (mansabdor) match natijasi — FATF R12 bo'yicha
 export type PEPMatch = {
   pep_id: string;
   pep_name: string;
   match_type: "exact" | "alias" | "fuzzy" | "family_lastname";
-  similarity: number;
+  similarity: number;     // 0-1
   category?: string;
-  case_url?: string;
-  case_summary?: string;
+  case_url?: string;      // tashqi keys URL'i
+  case_summary?: string;  // qisqa keys tavsifi
 };
 
+// Flag + qo'shimcha provenance ma'lumotlar (UI'da explainability uchun)
 export type Flag2 = Flag & {
-  category?: "A" | "B" | "C" | "D" | "E";
-  ref?: string;
-  ref_url?: string;
-  formula?: string;
-  fields?: string[];
+  category?: "A" | "B" | "C" | "D" | "E";  // OECD toifasi
+  ref?: string;            // standart manba (masalan "Fazekas CRI · OCDS R001")
+  ref_url?: string;        // URL — bosib o'tish mumkin
+  formula?: string;        // matematik shart
+  fields?: string[];       // ishlatilgan e-auksion maydonlari
   weight?: number;
-  weighted_score?: number;
-  pep?: PEPMatch;
+  weighted_score?: number; // score × weight
+  pep?: PEPMatch;          // faqat PEP flag'lar uchun
 };
+
+// 5 OECD toifasi bo'yicha sub-ballar
 export type Categories = { A: number; B: number; C: number; D: number; E: number };
 
+// Toifa kodlari → o'zbekcha nom (UI'da ko'rsatish uchun)
 export const CATEGORY_LABEL: Record<string, { name: string; full: string }> = {
   A: { name: "Past shaffoflik", full: "A. Low Transparency" },
   B: { name: "Kelishuv", full: "B. Collusion" },
@@ -117,12 +124,15 @@ export type MapMarker = {
   region: string | null;
 };
 
+// Generic fetch wrapper — JSON qaytaradi, HTTP xato bo'lsa exception ko'taradi
+// cache: "no-store" — Next.js caching'ni o'chiradi (har request real-vaqt)
 async function get<T>(path: string): Promise<T> {
   const r = await fetch(`${API}${path}`, { cache: "no-store" });
   if (!r.ok) throw new Error(`API ${path} ${r.status}`);
   return r.json();
 }
 
+// Barcha API endpoint'lari uchun typed klient
 export const api = {
   stats: () => get<Stats>("/api/stats"),
   lots: (params: Record<string, string | number> = {}) => {
@@ -191,6 +201,7 @@ export const REGION_NAMES: Record<string, string> = {
   "UZ-QR": "Qoraqalpog'iston",
 };
 
+// Pul miqdorini o'qib bo'lish formatga o'gir: 1230000000 → "1.23 mlrd so'm"
 export function formatUZS(value: number | null | undefined): string {
   if (value == null) return "—";
   if (value >= 1e12) return `${(value / 1e12).toFixed(2)} trln so'm`;
@@ -199,12 +210,14 @@ export function formatUZS(value: number | null | undefined): string {
   return `${Math.round(value).toLocaleString("uz-UZ")} so'm`;
 }
 
+// Risk darajasi → Tailwind bg klassi (badge fon rangi)
 export function riskColor(level: string): string {
   if (level === "high") return "bg-red-600";
   if (level === "medium") return "bg-amber-500";
   return "bg-emerald-500";
 }
 
+// Risk darajasi → Tailwind text klassi
 export function riskTextColor(level: string): string {
   if (level === "high") return "text-red-500";
   if (level === "medium") return "text-amber-400";

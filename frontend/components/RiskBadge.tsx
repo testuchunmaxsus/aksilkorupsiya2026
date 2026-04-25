@@ -1,11 +1,16 @@
+// Risk darajasi belgilarini ko'rsatuvchi 2 ta komponent:
+//   <RiskBadge>  — kichik pill (jadval ichida, ro'yxatda)
+//   <RiskGauge>  — katta gauge bar (lot detail sahifasida)
 type Props = { score: number; level: string; size?: "sm" | "md" | "lg" };
 
+// Daraja → o'zbekcha sarlavha
 const labels = {
   high: "YUQORI XAVF",
   medium: "O'RTA XAVF",
   low: "OZ XAVF",
 } as const;
 
+// Pill ko'rinishidagi badge — score + daraja matni + rangli nuqta
 export function RiskBadge({ score, level, size = "sm" }: Props) {
   const map = {
     high: { color: "var(--red)", bg: "var(--red-soft)" },
@@ -32,6 +37,8 @@ export function RiskBadge({ score, level, size = "sm" }: Props) {
   );
 }
 
+// Katta gauge — lot detail sahifasi yuqorisida ko'rinadi.
+// Risk score'ni 0-100 oraliq bar bilan + tick mark'lar (40, 70 chegaralari).
 export function RiskGauge({ score, level }: { score: number; level: string }) {
   const map = {
     high: "var(--red)",

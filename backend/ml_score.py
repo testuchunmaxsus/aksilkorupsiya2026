@@ -1,11 +1,16 @@
-"""Run ML pipeline on Fergana.xlsx and import predictions into Lot table.
+"""ML pipeline'ni Fergana.xlsx ustida ishlatib, natijalarni Lot jadvaliga yozish.
 
-Combines:
-  - rule_score (40%)
-  - xgb_prob (35%, XGBoost classifier)
-  - iso_norm (25%, IsolationForest anomaly)
+ML chining ishi (ml/scripts/core_pipeline.py):
+  - 33 feature engineering
+  - Rule score (40%)
+  - XGBoost probability (35%) — CV AUC 0.98
+  - IsolationForest anomaly (25%)
+  - Ensemble final score 0-1 + KRITIK/YUQORI/O'RTA/PAST level
 
-XGBoost CV AUC = 0.98 (trained on weak-supervised 114 lot from Fergana).
+Bu skript shu pipeline'ni chaqiradi va lot_id bo'yicha bizning Lot
+jadvaliga ml_score, ml_level, ml_reason, xgb_prob, iso_score yozadi.
+Natijada bizning rule-based engine va ML ensemble lot detail'da
+side-by-side ko'rinadi.
 """
 import os
 import sys
@@ -15,7 +20,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "ml"))
 
-# core_pipeline.py expects models/ to be relative to cwd; switch dir
+# core_pipeline.py models/ ni cwd'ga nisbatan o'qiydi → ml/ ga chdir kerak
 ML_DIR = ROOT / "ml"
 
 
@@ -25,7 +30,7 @@ def main():
     from backend.db import engine
     from backend.models import Lot
 
-    # core_pipeline imports relative paths — chdir into ml/
+    # ML pipeline'ni ml/ ichida ishga tushirish (relative path'lar uchun)
     cwd = os.getcwd()
     os.chdir(ML_DIR)
     try:
@@ -36,15 +41,16 @@ def main():
             verbose=True,
         )
     finally:
-        os.chdir(cwd)
+        os.chdir(cwd)  # original cwd'ni qaytarish
 
     preds: pd.DataFrame = result["predictions"]
     print(f"\n[ml] {len(preds)} predictions ready")
 
-    # Map to lot_id; join into DB
+    # lot_number → lot_id (integer) — bizning DB'da lot.id bilan join
     preds["lot_id"] = pd.to_numeric(preds["lot_number"], errors="coerce").astype("Int64")
     preds = preds.dropna(subset=["lot_id"])
 
+    # DataFrame → dict tezkor lookup uchun
     by_id: dict[int, dict] = {
         int(r.lot_id): {
             "ml_score": float(r.risk_score) if pd.notna(r.risk_score) else None,
@@ -56,6 +62,7 @@ def main():
         for r in preds.itertuples()
     }
 
+    # DB'ga yozish — har 1000 lot dan keyin commit
     print(f"[ml] joining to {len(by_id)} lots...")
     updated = 0
     not_found = 0
@@ -63,6 +70,7 @@ def main():
         for lot_id, ml in by_id.items():
             lot = session.get(Lot, lot_id)
             if not lot:
+                # Lot DB'da yo'q — ML predictions ortiqcha (skip)
                 not_found += 1
                 continue
             for k, v in ml.items():
@@ -75,6 +83,7 @@ def main():
 
     print(f"[ml] DONE — updated {updated}, not in DB {not_found}")
 
+    # Yakuniy stat
     with Session(engine) as session:
         n_with_ml = session.exec(
             select(func.count(Lot.id)).where(Lot.ml_score.is_not(None))

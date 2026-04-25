@@ -1,5 +1,10 @@
+// ML Ensemble paneli — lot detail sahifasida CategoryBars ostida ko'rinadi.
+// XGBoost + IsolationForest natijalarini ko'rsatadi va rule engine bilan
+// side-by-side taqqoslaydi. Agar score'lar bir-biridan jiddiy farq qilsa
+// (>30 punkt) avtomatik tushuntirish chiqaradi.
 import type { Lot } from "@/lib/api";
 
+// ML level → rang (KRITIK=qizil, YUQORI=amber, O'RTA=ko'k, PAST=yashil)
 const LEVEL_COLOR: Record<string, string> = {
   KRITIK: "var(--red)",
   YUQORI: "#f59e0b",
@@ -14,17 +19,22 @@ const LEVEL_BG: Record<string, string> = {
   PAST: "var(--emerald-soft)",
 };
 
+// Agar rule va ML score'lari sezilarli farq qilsa — sababini tushuntirish.
+// Misol: rule=100 + ml=20 → rule "ko'p signal", ml "training pattern keng tarqalgan"
+// Misol: rule=35 + ml=92 → ml "murakkab pattern, OECD ramkasidan tashqari"
 function divergenceText(rule: number, ml: number): string | null {
-  // ml is 0..1, rule is 0..100
+  // ml 0..1, rule 0..100 — bir o'lchovga keltirish
   const ruleNorm = rule / 100;
   const diff = Math.abs(ruleNorm - ml);
-  if (diff < 0.3) return null;
+  if (diff < 0.3) return null;  // farq kichik — tushuntirish kerakmas
   if (ruleNorm > ml) {
+    // Rule yuqori, ML past
     return (
       "Rule engine xalqaro standart asosida ko'p signal topdi. " +
       "ML model trening data'sida bu pattern keng tarqalganligi sabab past baholaydi."
     );
   }
+  // ML yuqori, rule past
   return (
     "ML model rule'lar qoplay olmaydigan murakkab pattern (masalan bankruptcy + no-discount) topdi. " +
     "Bu signal'lar OECD ramkasida yo'q — ML statistik tahlildan kelgan."
@@ -32,6 +42,8 @@ function divergenceText(rule: number, ml: number): string | null {
 }
 
 export function MLPanel({ lot }: { lot: Lot }) {
+  // ML score yo'q bo'lsa panel'ni umuman ko'rsatmaymiz
+  if (lot.ml_score === null || lot.ml_score === undefined) return null;
   if (lot.ml_score === null || lot.ml_score === undefined) return null;
   const level = lot.ml_level || "PAST";
   const color = LEVEL_COLOR[level] || "var(--fg-mute)";

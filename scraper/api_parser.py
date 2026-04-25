@@ -1,7 +1,14 @@
-"""Parse rich API JSON into our schema.
+"""E-auksion API JSON'ni bizning Lot modeliga moslash.
 
-Maps e-auksion gateway fields → AuksionWatch Lot model.
-Far richer than text-scrape (geo, real bidder count, appraised price benchmark).
+api_scraper.py'dan kelgan boy JSON'ni AuksionWatch ichki schema'ga aylantiradi:
+  - region_name → UZ-XX kod
+  - is_closed: 1 → auction_type='closed'
+  - baholangan_narx → appraised_price (real benchmark!)
+  - c_user.name → seller_name
+  - is_descending_auction → is_descending (teskari auksion flagi)
+
+Playwright'dan ko'ra boy ma'lumot — geo koordinata, ishtirokchilar soni,
+hujjatlar ro'yxati, MIB (sud ijrochisi) ma'lumoti.
 """
 import json
 from pathlib import Path
@@ -9,7 +16,7 @@ from typing import Any
 
 ROOT = Path(__file__).parent.parent
 
-# Region ID → ISO-like code (extracted from API region_name field)
+# Region ID → ISO kod (api regions_id maydonidan)
 REGION_MAP = {
     1: "UZ-TK",   # Toshkent shahri
     2: "UZ-TO",   # Toshkent viloyati
@@ -49,6 +56,11 @@ REGION_NAME_TO_CODE = {
 
 
 def localized(field: Any, lang: str = "uz") -> str | None:
+    """Multilanguage maydondan to'g'ri tilni tanlash.
+
+    e-auksion API ko'p maydonlarni 4 tilda beradi: name_uz/ru/uk/en.
+    Bizga uz birinchi, keyin ru fallback.
+    """
     if not field:
         return None
     if isinstance(field, str):
@@ -61,66 +73,77 @@ def localized(field: Any, lang: str = "uz") -> str | None:
 
 
 def parse_lot(raw: dict) -> dict | None:
+    """Raw API JSON'ni Lot model schema'siga moslash.
+
+    Returns None agar lot xato yoki bo'sh bo'lsa.
+    """
+    # Xato yoki bo'sh javob — None qaytaramiz, pipeline davom etadi
     if not raw or "error" in raw or not raw.get("id"):
         return None
 
+    # ── Identifikator va joylashuv ──
     lot_id = raw["id"]
     region_name = localized(raw.get("region_name"))
     region_code = REGION_NAME_TO_CODE.get(region_name) or REGION_MAP.get(raw.get("regions_id"))
-
     district = localized(raw.get("area_name"))
     address = raw.get("joylashgan_manzil")
-
+    # Geo-koordinata — xarita uchun (string sifatida keladi, float'ga o'giramiz)
     lat = float(raw["lat"]) if raw.get("lat") else None
     lng = float(raw["lng"]) if raw.get("lng") else None
 
+    # ── Auksion turi va faollik ──
+    # is_closed=1 → yopiq auksion (Fazekas CRI eng kuchli signali)
     auction_type = "closed" if raw.get("is_closed") == 1 else "open"
-    bidders_count = raw.get("auction_cnt")
-    views = raw.get("view_count")
+    bidders_count = raw.get("auction_cnt")  # ishtirokchilar soni
+    views = raw.get("view_count")           # lotni necha marta ko'rilgan
 
+    # ── Narxlar ──
     start_price = raw.get("start_price")
+    # current_price — agar auksion tugagan bo'lsa, sotuv narxi
     sold_price = raw.get("current_price") if raw.get("current_price") and raw["current_price"] > 0 else None
-    appraised = raw.get("baholangan_narx")
-    deposit = raw.get("zaklad_summa")
-    step_summa = raw.get("step_summa")
+    appraised = raw.get("baholangan_narx")  # rasmiy baholangan narx — REAL benchmark
+    deposit = raw.get("zaklad_summa")        # zakalat puli
+    step_summa = raw.get("step_summa")       # auksion qadami
 
-    # seller info
+    # ── Sotuvchi ma'lumotlari ──
     c_user = raw.get("c_user") or {}
     seller_name = c_user.get("name") or raw.get("user_fio")
     seller_phone = c_user.get("phone") or raw.get("user_phone")
     seller_address = c_user.get("full_address")
-    seller_id = raw.get("c_users_id")
+    seller_id = raw.get("c_users_id")  # numeric ID — graf tahlili uchun
 
-    # mib (court executor) info
+    # ── MIB (sud ijrochisi) ma'lumotlari ──
+    # Sud orqali sotilayotgan mol-mulk uchun (executive officer / pristav)
     mib_inn = raw.get("mib_inn")
     mib_name = raw.get("mib_name")
     mib_executor = raw.get("mib_executor_fio")
 
-    # categorize seller
+    # ── Sotuvchi turini aniqlash (heuristika) ──
     if mib_name:
-        seller_hint = "court"
+        seller_hint = "court"               # sud orqali sotilmoqda
     elif raw.get("is_from_mib_portal") == 1:
         seller_hint = "mib"
     else:
-        seller_hint = "davaktiv"
+        seller_hint = "davaktiv"            # default — Davaktiv (Davlat aktivlari)
 
-    # lot type taxonomy
-    lot_type = localized(raw.get("confiscant_categories_name"))
-    lot_type_group = localized(raw.get("confiscant_groups_name"))
-    auction_method = localized(raw.get("auction_type_name"))
-    auction_style = localized(raw.get("lot_types_name"))
+    # ── Lot turi va auksion uslubi ──
+    lot_type = localized(raw.get("confiscant_categories_name"))   # batafsil kategoriya
+    lot_type_group = localized(raw.get("confiscant_groups_name")) # umumiy guruh
+    auction_method = localized(raw.get("auction_type_name"))      # "Auksion" / "Tanlov"
+    auction_style = localized(raw.get("lot_types_name"))          # "Oshirib borish"
 
     title = raw.get("name")
     status = localized(raw.get("lot_statuses_name"))
     start_time = raw.get("start_time_str") or raw.get("start_time")
     end_time = raw.get("order_end_time_str")
 
+    # Hujjatlar va rasmlar (count'i ko'rsatamiz, full URL keyin)
     docs = [d.get("file_name") for d in (raw.get("confiscant_documents_list") or []) if d]
     images = [
         i.get("document_resources_id") for i in (raw.get("confiscant_images_list") or []) if i
     ]
 
-    # term payment / installment
+    # Bo'lib to'lash (favoritism belgisi)
     is_term = raw.get("is_term_payment") == 1
     term_months = raw.get("term_month")
 
@@ -167,6 +190,7 @@ def parse_lot(raw: dict) -> dict | None:
 
 
 def main():
+    """CLI — lots_api.json (raw) → lots_parsed.json (structured)."""
     raw_path = ROOT / "data" / "lots_api.json"
     out_path = ROOT / "data" / "lots_parsed.json"
     raw = json.loads(raw_path.read_text(encoding="utf-8"))

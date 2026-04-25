@@ -1,23 +1,25 @@
-"""Ingest official e-auksion Excel report into AuksionWatch DB.
+"""E-auksion rasmiy Excel hisobotini DB'ga import.
 
-Source: D:/hackaton/23131.xlsx — Farg'ona viloyati 9266 lots
-Schema (row 4 headers):
-  A Manzil
-  B Bino maydoni kv.m.
-  C Baholangan narx
-  D Ijara maydoni
-  E Oxirgi auksion sanasi
-  F Lot raqami
-  G Viloyat
-  H Tuman/Shahar
-  I Kategoriya nomi
-  J T/R
-  K Boshlang'ich narx
-  L Buyurtmachi nomi (seller)
-  M Sozlamalar
-  N Mulk turi
-  O Yer maydoni (ga)
-  P Necha marta savdoga chiqarilganligi (re-auction count)
+Manba: D:/hackaton/23131.xlsx — Farg'ona viloyati 9266 lot.
+Bu Davaktiv chiqaradigan rasmiy hisobot — har 24 soatda yangilanadi.
+
+Excel ustunlari (4-qatordan boshlanadi, 0-3 sarlavha):
+  A — Manzil
+  B — Bino maydoni kv.m.
+  C — Baholangan narx (real benchmark!)
+  D — Ijara maydoni
+  E — Oxirgi auksion sanasi
+  F — Lot raqami (lot_id)
+  G — Viloyat
+  H — Tuman/Shahar
+  I — Kategoriya nomi
+  J — T/R (tartib raqami)
+  K — Boshlang'ich narx
+  L — Buyurtmachi nomi (sotuvchi — Niyozov, Turdikov h.k.)
+  M — Sozlamalar (Bankrotlik, K-SAVDO, Ijara)
+  N — Mulk turi
+  O — Yer maydoni (ga)
+  P — Necha marta savdoga chiqarilganligi ⭐ (eng kuchli signal)
 """
 import sys
 import json
@@ -39,8 +41,9 @@ from backend.db import engine, init_db
 from backend.models import Lot
 
 ROOT = Path(__file__).parent.parent
-EXCEL_PATH = Path("D:/hackaton/23131.xlsx")
+EXCEL_PATH = Path("D:/hackaton/23131.xlsx")  # User yuborgan rasmiy fayl
 
+# Hudud markazlari — Excel'da geo-koordinata yo'q, shuning uchun jitter bilan markaz
 REGION_CENTROIDS = {
     "UZ-FA": (40.3834, 71.7842),  # Farg'ona
     "UZ-TK": (41.3111, 69.2797),

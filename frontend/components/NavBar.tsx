@@ -1,19 +1,24 @@
+// Asosiy sayt navigatsiya paneli — har sahifada ko'rinadi (layout.tsx orqali).
+// my.gov.uz ga o'xshatib 2 ta strip: yuqori (mini-bar) + asosiy (logo + menu).
 import Link from "next/link";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function NavBar() {
   return (
     <header className="bg-[var(--bg-elev)] border-b border-[var(--line)] sticky top-0 z-50">
-      {/* Top strip — government portal style */}
+      {/* Yuqori strip — gov portal stili: status, til, API, tema */}
       <div className="bg-[var(--primary-deep)] text-white">
         <div className="mx-auto max-w-7xl px-6 py-1.5 flex items-center justify-between text-[11px]">
+          {/* Chap tomon — live status indikatori */}
           <div className="flex items-center gap-2 mono tracking-wider">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 live-dot" />
             <span>OCHIQ NAZORAT TIZIMI · MUSTAQIL</span>
           </div>
+          {/* O'ng tomon — quick links */}
           <div className="flex items-center gap-3 text-white/70 mono">
             <span>UZ</span>
             <span className="opacity-40">|</span>
+            {/* Backend Swagger UI */}
             <a className="hover:text-white" href="http://127.0.0.1:8000/docs" target="_blank" rel="noreferrer">
               API
             </a>
@@ -22,13 +27,15 @@ export function NavBar() {
               Metodologiya
             </Link>
             <span className="opacity-40">|</span>
+            {/* Light/Dark toggle (localStorage'da saqlanadi) */}
             <ThemeToggle />
           </div>
         </div>
       </div>
 
-      {/* Main bar */}
+      {/* Asosiy bar — logo + menyu + CTA */}
       <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between gap-6 bg-[var(--bg-elev)]">
+        {/* Logo (bosh sahifaga link) */}
         <Link href="/" className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -37,11 +44,13 @@ export function NavBar() {
             className="h-11 md:h-12 w-auto"
             draggable={false}
           />
+          {/* Mobile'da yashirilgan — faqat sm+ ekran */}
           <span className="hidden sm:inline-block text-[11px] text-[var(--fg-dim)] border-l border-[var(--line)] pl-3">
             Ochiq nazorat<br />tizimi
           </span>
         </Link>
 
+        {/* Asosiy menyu — lg+ ekran */}
         <nav className="hidden lg:flex items-center gap-1 text-sm font-medium">
           {[
             ["/", "Bosh"],
@@ -61,6 +70,7 @@ export function NavBar() {
           ))}
         </nav>
 
+        {/* O'ng tarafdagi CTA — eng xavfli lotlarga tezkor o'tish */}
         <div className="flex items-center gap-2">
           <Link
             href="/lots?risk_level=high"
