@@ -20,22 +20,37 @@ from backend.models import Lot
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    print(f"[startup] AuksionWatch v1.2 — initializing", flush=True)
     init_db()
-    # Auto-seed on first boot if DB is empty (Railway / fresh deploy)
-    if os.getenv("AUTOSEED", "1") != "0":
+    print(f"[startup] DB initialized · DATABASE_URL host hint: {os.getenv('DATABASE_URL', 'sqlite-default').split('@')[-1][:60]}", flush=True)
+
+    autoseed = os.getenv("AUTOSEED", "1")
+    print(f"[startup] AUTOSEED={autoseed}", flush=True)
+    if autoseed != "0":
         try:
             with Session(engine) as session:
-                if session.exec(select(func.count(Lot.id))).one() == 0:
-                    seed_path = Path(__file__).parent.parent / "data" / "lots_parsed.json"
-                    if seed_path.exists():
-                        from backend.reingest_v11 import main as reingest_main  # noqa
-                        print(f"[startup] DB empty — seeding from {seed_path}")
-                        reingest_main()
-                        # rescore so categories + provenance attached
-                        from backend.rescore_all import main as rescore_main
-                        rescore_main()
+                count = session.exec(select(func.count(Lot.id))).one()
+            print(f"[startup] existing lot count: {count}", flush=True)
+
+            seed_path = Path(__file__).parent.parent / "data" / "lots_parsed.json"
+            print(f"[startup] seed file exists: {seed_path.exists()} ({seed_path})", flush=True)
+
+            if count == 0 and seed_path.exists():
+                print(f"[startup] DB empty — running reingest...", flush=True)
+                from backend.reingest_v11 import main as reingest_main  # noqa
+                reingest_main()
+                print(f"[startup] reingest done — running rescore...", flush=True)
+                from backend.rescore_all import main as rescore_main
+                rescore_main()
+                print(f"[startup] auto-seed complete", flush=True)
+            elif count > 0:
+                print(f"[startup] DB already has {count} lots — skipping seed", flush=True)
+            else:
+                print(f"[startup] seed file missing — cannot seed", flush=True)
         except Exception as e:
-            print(f"[startup] auto-seed skipped: {e}")
+            import traceback
+            print(f"[startup] auto-seed FAILED: {e}", flush=True)
+            traceback.print_exc()
     yield
 
 
