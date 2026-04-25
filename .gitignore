@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+
+# Secrets / env
+.env
+.env.local
+.env.*.local
+bot/.env
+
+# Database / large data dumps (regenerable)
+data/*.db
+data/*.db-journal
+data/auksionwatch.db*
+data/lots_raw.json
+data/lots_api.json
+data/lot_ids.json
+data/api_sniff.json
+data/api_sample.json
+
+# Logs / OS
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Playwright cache
+test-results/
+playwright-report/

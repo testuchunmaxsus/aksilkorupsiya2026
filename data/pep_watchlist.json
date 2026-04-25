@@ -1,0 +1,50 @@
+{
+  "version": "1.1",
+  "updated": "2026-04-25",
+  "license": "CC BY-SA 4.0",
+  "note": "PEP watchlist contains only verified public officials with documented public sources. Dominant buyers (Niyozov, Turdikov, etc.) are flagged via monopoly_seller / dominant_seller rules — not PEP. Production should integrate OpenSanctions API + anticorruption.uz declarations.",
+  "officials": [
+    {
+      "id": "uz-pep-001",
+      "name": "Akmalxon Ortiqov",
+      "aliases": ["Ortikov A", "Akmalkhon Ortiqov", "Ortiqov Akmal"],
+      "position": "Davlat aktivlarini boshqarish agentligi sobiq direktori",
+      "level": "national",
+      "category": "executive",
+      "status": "arrested",
+      "case_url": "https://www.spot.uz/oz/2026/01/27/akmal-ortikov",
+      "case_summary": "2026-yanvar — 130 mlrd so'mlik yer yopiq auksionda 120 mlrd so'mga sotilgan. Hibsga olingan."
+    },
+    {
+      "id": "uz-pep-002",
+      "name": "Sohibjon Murodov",
+      "aliases": ["Murodov S", "Sohibjon Muratov"],
+      "position": "Davlat aktivlarini boshqarish agentligi rahbari (2026-fevral'dan)",
+      "level": "national",
+      "category": "executive",
+      "status": "active",
+      "case_url": "https://www.spot.uz/oz/2026/02/10/uzsama/"
+    },
+    {
+      "id": "uz-pep-003",
+      "name": "Erkinjon Turdimov",
+      "aliases": ["Turdimov E", "Turdimov Erkin"],
+      "position": "Samarqand viloyati hokimi (sobiq)",
+      "level": "regional",
+      "category": "executive",
+      "status": "former",
+      "case_url": "https://longreads.cabar.asia/uz_auction",
+      "case_summary": "Auksion natijasini bekor qildirish uchun sudga shaxsan xat yozgan (CABAR Asia tahqiqi)."
+    }
+  ],
+  "government_addresses": [
+    {"keywords": ["hokimligi", "hokimiyati"], "type": "regional_admin"},
+    {"keywords": ["vazirligi", "vazirlik"], "type": "ministry"},
+    {"keywords": ["agentligi"], "type": "agency"},
+    {"keywords": ["tuman hokimligi"], "type": "district_admin"},
+    {"keywords": ["respublikasi"], "type": "state_property"}
+  ],
+  "family_keywords": [
+    "o'g'li", "o'g`li", "ogli", "qizi", "kizi"
+  ]
+}
