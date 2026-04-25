@@ -27,6 +27,20 @@ data/lots_api.json
 data/lot_ids.json
 data/api_sniff.json
 data/api_sample.json
+data/ml_output/
+
+# Heavy ML data dumps (regenerable from Excel)
+ml/data/*.parquet
+ml/data/lots_*.parquet
+ml/data/lot_ids*.parquet
+ml/data/eda_report.html
+ml/data/sample_lot.html
+ml/data/api_responses.json
+ml/data/api_lot_sample.json
+ml/data/sheet_0.json
+ml/data/jobs/
+ml/data/test_run/
+ml/data/prod_test/
 
 # Logs / OS
 *.log

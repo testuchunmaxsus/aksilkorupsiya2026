@@ -1,0 +1,20 @@
+Jami: 200 lot
+  Random: 60
+  Yuqori risk (score>=5): 70
+  Model shubhalisi: 70
+
+flag_type qiymatlari:
+  normal
+  price_below_appraised
+  single_step_auction
+  no_documents
+  short_duration
+  low_deposit
+  price_outlier
+  other
+
+Ko'rsatma:
+  1. url ustunidagi linkni brauzerda oching
+  2. is_suspicious: 0 yoki 1
+  3. flag_type: yuqoridagi ro'yxatdan
+  4. Tugatgach red_flags_labeled.csv deb saqlang

@@ -1,0 +1,66 @@
+{
+  "version": "1.0.0",
+  "project": "AuksionWatch",
+  "training_data": "Fergana.xlsx (weak-supervision, 114 lot)",
+  "features": [
+    "start_price_log",
+    "appraised_price_log",
+    "price_ratio",
+    "price_diff_log",
+    "price_below_70pct",
+    "price_below_10pct",
+    "no_discount",
+    "price_above_130pct",
+    "auction_count",
+    "auction_count_log",
+    "is_repeated",
+    "is_very_repeated",
+    "is_mega_repeated",
+    "is_ultra_repeated",
+    "category_risk",
+    "is_bankruptcy",
+    "is_k_savdo",
+    "is_rental",
+    "bankruptcy_no_discount",
+    "is_land",
+    "is_real_estate",
+    "is_vehicle",
+    "is_state_asset",
+    "seller_lot_count",
+    "seller_is_heavy",
+    "building_area_log",
+    "land_area_log",
+    "has_building_area",
+    "has_land_area",
+    "auction_month",
+    "auction_weekday",
+    "is_weekend",
+    "district_id"
+  ],
+  "n_features": 33,
+  "models": {
+    "xgboost": {
+      "file": "xgboost.onnx",
+      "type": "XGBClassifier",
+      "cv_auc": 0.9825757575757577,
+      "cv_ap": 0.9892317827100436,
+      "output": "probability [0..1], threshold 0.5"
+    },
+    "isolation_forest": {
+      "file": "isolation_forest.onnx",
+      "type": "IsolationForest",
+      "contamination": 0.12,
+      "output": "anomaly score (higher = more anomalous)"
+    },
+    "scaler": {
+      "file": "scaler.onnx",
+      "type": "StandardScaler",
+      "note": "apply before inference"
+    }
+  },
+  "inference_order": [
+    "scaler → isolation_forest",
+    "scaler → xgboost"
+  ],
+  "risk_ensemble": "rule×0.40 + xgb_prob×0.35 + iso_norm×0.25"
+}

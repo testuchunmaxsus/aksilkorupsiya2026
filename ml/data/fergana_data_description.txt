@@ -1,0 +1,154 @@
+======================================================================
+FERGANA.XLSX — MA'LUMOTLAR TAVSIFI VA TAHLIL NATIJALARI
+======================================================================
+
+Sana: 25.04.2026
+Manbaa: e-auksion.uz platforma hisoboti (Farg'ona viloyati)
+
+----------------------------------------------------------------------
+1. EXCEL FAYLDAN OLINGAN USTUNLAR (16 ta)
+----------------------------------------------------------------------
+
+Ustun nomi          | Turi       | Tavsif
+--------------------|------------|------------------------------------------
+address             | Matn       | Lot manzili
+building_area_m2    | Raqam      | Bino maydoni (kv.m), 93% bo'sh
+appraised_price     | Raqam      | Baholash narxi (so'mda)
+rental_area         | Matn       | Ijara maydoni, 99.8% bo'sh
+auction_date        | Sana-vaqt  | Keyingi auksion sanasi
+lot_number          | Butun son  | Lot raqami (asosiy ID)
+region              | Matn       | Viloyat — barchasi "Farg'ona viloyati"
+district            | Matn       | Tuman yoki shahar nomi (15 ta)
+category            | Matn       | Mulk kategoriyasi (25 ta turli toifa)
+serial_no           | Butun son  | T/R tartib raqami
+start_price         | Raqam      | Boshlanish (boshlang'ich) narxi
+seller_name         | Matn       | Buyurtmachi (sotuvchi) nomi
+auction_settings    | Matn       | Auksion sozlamasi (turi)
+property_type       | Matn       | Mulk turi (15 ta turli)
+land_area_ga        | Raqam      | Yer maydoni (ga yoki m2), 51% bo'sh
+auction_count       | Butun son  | Necha marta savdoga chiqarilgan
+
+Jami: 9,264 lot (Farg'ona viloyatining barcha tumanlari)
+
+----------------------------------------------------------------------
+2. PIPELINE TOMONIDAN YARATILGAN QO'SHIMCHA USTUNLAR (feature engineering)
+----------------------------------------------------------------------
+
+NARX XUSUSIYATLARI:
+  price_ratio        = start_price / appraised_price
+                       (0.10 = narx baholashning 10%)
+  no_discount        = 1 agar start_price == appraised_price (chegirma yo'q)
+  price_below_70pct  = 1 agar narx baholashning 70% dan past
+  price_below_10pct  = 1 agar narx baholashning 10% dan past (juda kuchli signal)
+  price_above_130pct = 1 agar narx baholashdan 30% yuqori
+  price_diff         = start_price - appraised_price
+  start_price_log    = log(start_price + 1) — normallash uchun
+  appraised_price_log= log(appraised_price + 1) — normallash uchun
+
+AUKSION DAVOMIYLIGI:
+  is_repeated        = 1 agar auction_count > 3
+  is_very_repeated   = 1 agar auction_count > 20
+  is_mega_repeated   = 1 agar auction_count > 50
+  is_ultra_repeated  = 1 agar auction_count > 100
+  auction_count_log  = log(auction_count + 1)
+
+TOIFA VA SOZLAMA RISKLARI:
+  is_bankruptcy      = 1 agar auction_settings "Bankrotlik" turida
+  is_k_savdo         = 1 agar K-SAVDO (ko'chma savdo joyi)
+  is_rental          = 1 agar ijara sozlamasi
+  bankruptcy_no_discount = 1 agar bankrot LOT uchun CHEGIRMA YO'Q
+                          (bu eng kuchli qo'shma signal)
+  category_risk      = Kategoriyaga qarab risk bali (0.5 — 3.0)
+
+MULK TURI:
+  is_land            = 1 agar yer uchastka
+  is_real_estate     = 1 agar ko'chmas mulk
+  is_vehicle         = 1 agar avtotransport
+  is_state_asset     = 1 agar davlat mulki
+
+SOTUVCHI XUSUSIYATLARI:
+  seller_lot_count   = Bu sotuvchi chiqargan jami lot soni
+  seller_is_heavy    = 1 agar bir sotuvchi 10+ lot chiqargan
+
+BOZOR BENCHMARK:
+  district_median_price = Bir tumanda, bir turdagi mulklar median narxi
+  price_vs_district  = start_price / district_median_price
+                       (1.0 dan past = median'dan past narx)
+
+VAQT:
+  auction_month      = Auksion oyi
+  auction_weekday    = Hafta kuni (0=Dushanba)
+  is_weekend         = 1 agar dam olish kuni
+
+QULAYLIK:
+  lot_url            = "https://e-auksion.uz/lot-view?lot_id=XXXX"
+  district_id        = Tuman uchun raqamli kod
+
+----------------------------------------------------------------------
+3. SCORING METODOLOGIYASI
+----------------------------------------------------------------------
+
+QOIDALARGA ASOSLANGAN BALL (rule_score, 0-10):
+  +3.0  agar narx baholashning 10% dan past (JUDA kuchli)
+  +2.0  agar narx baholashning 70% dan past
+  +1.5  agar chegirma yo'q (start == appraised)
+  +2.0  agar bankrotlik lotida
+  +3.0  agar bankrotlik + chegirmasiz (MAXSUS qo'shma signal)
+  +0.5  agar 3+ marta e'lon
+  +1.0  agar 20+ marta e'lon
+  +1.5  agar 50+ marta e'lon
+  +2.0  agar 100+ marta e'lon
+  +1.0  agar K-SAVDO
+  +1.0  agar davlat mulki + past narx
+
+ML ANOMALIYA BALL (iso_score):
+  IsolationForest (200 daraxt, 12% contamination)
+  Barcha raqamli xususiyatlar asosida statistik anomaliyani aniqlaydi
+
+YAKUNIY RISK BALI:
+  risk_score = rule_norm * 0.55 + iso_norm * 0.45
+  (qoidalar qismi ko'proq og'irlikda, ML qismi qo'llab-quvvatlaydi)
+
+RISK DARAJALARI (kvantilelarga asoslangan):
+  KRITIK = eng yuqori 2%  (p98 chegara)
+  YUQORI = 2% — 10%       (p90 chegara)
+  O'RTA  = 10% — 40%      (p60 chegara)
+  PAST   = qolgan 60%
+
+----------------------------------------------------------------------
+4. ASOSIY TOPILMALAR (25.04.2026 holati)
+----------------------------------------------------------------------
+
+KRITIK TOPILMALAR:
+  1. BARCHA 186 ta bankrotlik lotida chegirma YO'Q (price_ratio = 1.0).
+     Bankrot korxona mulklari odatda katta chegirma bilan sotiladi —
+     llegirmasiz bankrotlik lotlari shubhali tartibga ko'rsatadi.
+
+  2. 155 ta KRITIK lot "Boshqa turdagi mulklar" kategoriyasida —
+     bu keng va nazorat qilish qiyin bo'lgan toifada ko'p shubhali lot bor.
+
+  3. Farg'ona shahri KRITIK lotlar bo'yicha birinchi o'rinda (166 ta).
+
+  4. 31 ta lot narxi baholashning 10% dan ham pastroq —
+     bu juda kuchli korrupsiya belgisi.
+
+  5. 1,012 ta lot 100+ marta qayta e'lon qilingan —
+     bu lotlar hayotiy muomaladan chiqarib tashlangan, lekin rasmiy
+     ro'yxatda turgan "zombie" lotlaridir.
+
+  6. Lot 23169097 (O'zbekiston tumani): 13.2 mlrd so'm — bankrotlik,
+     chegirmasiz, 12 marta e'lon — ENG SHUBHALI LOT (score=0.888).
+
+  7. Lot 22838298 (Quvasoy shahri): 30.2 mlrd so'm — bankrotlik,
+     chegirmasiz, yangi e'lon — 2-chi o'rinda (score=0.851).
+
+----------------------------------------------------------------------
+5. CHIQISH FAYLLARI
+----------------------------------------------------------------------
+
+fergana_clean.parquet    — Tozalangan asosiy ma'lumotlar (9,264 qator, 18 ustun)
+fergana_features.parquet — Feature'lar bilan kengaytirilgan (9,264 qator, 50+ ustun)
+fergana_predictions.csv  — Risk bahosi va izoh (sortlangan, eng shubhalisi birinchi)
+fergana_report.txt       — Insonlar uchun o'qiladigan hisobot
+
+======================================================================

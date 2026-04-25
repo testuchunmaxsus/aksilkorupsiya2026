@@ -1,0 +1,8 @@
+Dastlabki: 9977
+Tozalangan: 9977
+Ustunlar: 50
+
+Null > 20%:
+  seller_inn: 96.3%
+  mib_name: 96.3%
+  additional_info: 88.4%

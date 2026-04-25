@@ -1,0 +1,23 @@
+Training data: Fergana.xlsx (weak-supervision)
+Sample: 57 shubhali + 57 normal = 114 lot
+Features: 33
+IsolationForest ROC-AUC (labeled): 0.684
+XGBoost CV ROC-AUC: 0.983 (+/- 0.028)
+XGBoost CV Avg-Precision: 0.989
+
+Top features:
+  is_repeated                         0.3904
+  auction_count                       0.2572
+  auction_count_log                   0.1748
+  price_ratio                         0.1542
+  start_price_log                     0.0104
+  is_vehicle                          0.0049
+  price_diff_log                      0.0025
+  district_id                         0.0021
+  appraised_price_log                 0.0018
+  seller_lot_count                    0.0017
+  price_above_130pct                  0.0000
+  is_very_repeated                    0.0000
+  is_mega_repeated                    0.0000
+  is_ultra_repeated                   0.0000
+  no_discount                         0.0000

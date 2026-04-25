@@ -1,0 +1,6 @@
+Rows: 9977
+Cols: 81
+Feature cols: 72
+is_high_risk=1: 5053
+price_below_appraised=1: 4087
+is_single_step=1: 759

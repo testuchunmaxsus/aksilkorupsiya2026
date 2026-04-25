@@ -4,6 +4,7 @@ import { api, formatUZS, REGION_NAMES } from "@/lib/api";
 import { RiskBadge, RiskGauge } from "@/components/RiskBadge";
 import { CategoryBars } from "@/components/CategoryBars";
 import { PrintButton } from "@/components/PrintButton";
+import { MLPanel } from "@/components/MLPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -257,6 +258,7 @@ export default async function LotDetail({
 
         {/* RIGHT — flags + categories */}
         <aside className="lg:col-span-5 space-y-4">
+          <MLPanel lot={lot} />
           <CategoryBars categories={lot.categories} total={lot.risk_score} />
 
           <div className="card overflow-hidden">

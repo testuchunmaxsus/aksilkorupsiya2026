@@ -21,7 +21,7 @@ class Lot(SQLModel, table=True):
     installment_months: Optional[int] = None
     auction_method: Optional[str] = None
     auction_style: Optional[str] = None
-    auction_type: str = Field(default="open", index=True)  # open | closed
+    auction_type: str = Field(default="open", index=True)
     start_time: Optional[str] = None
     deadline: Optional[str] = None
     end_time: Optional[str] = None
@@ -36,8 +36,16 @@ class Lot(SQLModel, table=True):
     geo_lon: Optional[float] = None
     is_descending: Optional[bool] = None
     risk_score: float = Field(default=0.0, index=True)
-    risk_level: str = Field(default="low", index=True)  # low | medium | high
+    risk_level: str = Field(default="low", index=True)
     ai_summary: Optional[str] = None
     flags: Optional[list] = Field(default=None, sa_column=Column(JSON))
     categories: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+
+    # ML pipeline outputs (XGBoost + IsolationForest ensemble)
+    ml_score: Optional[float] = Field(default=None, index=True)  # 0..1
+    ml_level: Optional[str] = None  # KRITIK / YUQORI / O'RTA / PAST
+    ml_reason: Optional[str] = None
+    ml_xgb_prob: Optional[float] = None
+    ml_iso_score: Optional[float] = None
+
     scraped_at: datetime = Field(default_factory=datetime.utcnow)

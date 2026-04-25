@@ -1,0 +1,90 @@
+======================================================================
+FERGANA VILOYATI — RED FLAG HISOBOT (Kvantilelarga asoslangan)
+Sana: 25.04.2026 16:00
+======================================================================
+
+Jami lot: 9,264
+
+RISK DARAJASI BO'YICHA (dinamik kvantil chegaralar):
+  KRITIK  (eng yuqori 2%):     187 lot  (threshold >= 0.772)
+  YUQORI  (2% - 10%):          757 lot  (threshold >= 0.513)
+  O'RTA   (10% - 40%):      2,762 lot
+  PAST    (qolgan 60%):      5,558 lot
+
+SCORE TAQSIMOTI:
+  Median (p50):  0.337
+  p90:           0.513
+  p98 (KRITIK):  0.772
+  Maksimal:      0.888
+
+ASOSIY SIGNAL STATISTIKASI:
+  Narx baholashdan 10% PAST (juda kuchli):      31
+  Narx baholashdan 70% past:                 4,688
+  Chegirmasiz (start==appraised):            4,211
+  Bankrotlik lotlari:                          186
+  Bankrotlik + chegirmasiz (alohida xavf):     186
+  3+ marta qayta e'lon:                      8,329
+  20+ marta qayta e'lon:                     7,528
+  50+ marta qayta e'lon:                     5,047
+  100+ marta qayta e'lon:                    1,012
+  K-SAVDO lotlari:                           1,802
+
+KATEGORIYA BO'YICHA KRITIK LOTLAR:
+    155 | Boshqa turdagi mulklar
+     13 | Tadbirkorlik va shaharsozlik uchun
+      5 | Noturar-joy obyektlari
+      4 | Yengil
+      3 | Asbob uskunalar
+      2 | Mebel
+      2 | Tashkiliy texnika vositalari
+      1 | Maxsus texnikalar
+      1 | Yuk
+      1 | Qurilish mollari
+
+TUMAN BO'YICHA KRITIK LOTLAR:
+    166 | Farg`ona shahri
+      9 | O`zbekiston tumani
+      7 | Farg`ona tumani
+      2 | Qo`qon shahri
+      1 | Oltiariq tumani
+      1 | Uchko`prik tumani
+      1 | Quvasoy shahri
+
+TOP 20 ENG SHUBHALI LOT:
+Lot          Tuman                            Narx         Bahola     %     N  Score  Sabab
+--------------------------------------------------------------------------------------------------------------
+23169097     O`zbekiston tumani     13,196,655,564 13,196,655,564  100%    12  0.888  Chegirmasiz (boshlanish narxi = baholash narx
+23136408     Oltiariq tumani         3,218,764,857  3,218,764,857  100%     2  0.863  Chegirmasiz (boshlanish narxi = baholash narx
+22866963     Uchko`prik tumani       1,078,809,533  1,078,809,533  100%     1  0.855  Chegirmasiz (boshlanish narxi = baholash narx
+22838298     Quvasoy shahri         30,225,000,000 30,225,000,000  100%     1  0.851  Chegirmasiz (boshlanish narxi = baholash narx
+23439577     O`zbekiston tumani        555,000,000    555,000,000  100%    35  0.843  Chegirmasiz (boshlanish narxi = baholash narx
+23229860     Qo`qon shahri          21,760,000,000 21,760,000,000  100%     3  0.843  Chegirmasiz (boshlanish narxi = baholash narx
+23229826     Farg`ona shahri           306,634,284    306,634,284  100%     5  0.831  Chegirmasiz (boshlanish narxi = baholash narx
+23226474     Farg`ona shahri             5,394,126      5,394,126  100%    32  0.818  Chegirmasiz (boshlanish narxi = baholash narx
+23226473     Farg`ona shahri             3,607,953      3,607,953  100%    32  0.815  Chegirmasiz (boshlanish narxi = baholash narx
+23226405     Farg`ona shahri                59,049         59,049  100%    28  0.810  Chegirmasiz (boshlanish narxi = baholash narx
+23226359     Farg`ona shahri                92,471         92,471  100%    28  0.806  Chegirmasiz (boshlanish narxi = baholash narx
+23226303     Farg`ona shahri               109,477        109,477  100%    28  0.806  Chegirmasiz (boshlanish narxi = baholash narx
+23226492     Farg`ona shahri               558,013        558,013  100%    22  0.805  Chegirmasiz (boshlanish narxi = baholash narx
+23226357     Farg`ona shahri               152,524        152,524  100%    28  0.801  Chegirmasiz (boshlanish narxi = baholash narx
+22866998     Farg`ona shahri            49,000,000     49,000,000  100%     1  0.799  Chegirmasiz (boshlanish narxi = baholash narx
+23226501     Farg`ona shahri             3,450,233      3,450,233  100%    23  0.798  Chegirmasiz (boshlanish narxi = baholash narx
+23226400     Farg`ona shahri               105,757        105,757  100%    29  0.798  Chegirmasiz (boshlanish narxi = baholash narx
+23226315     Farg`ona shahri            11,542,899     11,542,899  100%    27  0.796  Chegirmasiz (boshlanish narxi = baholash narx
+23226317     Farg`ona shahri            10,219,610     10,219,610  100%    27  0.796  Chegirmasiz (boshlanish narxi = baholash narx
+23226491     Farg`ona shahri             1,322,698      1,322,698  100%    23  0.795  Chegirmasiz (boshlanish narxi = baholash narx
+
+======================================================================
+BANKROTLIK + CHEGIRMASIZ (juda shubhali kombinatsiya):
+Lot          Tuman                            Narx         Bahola  Score
+---------------------------------------------------------------------------
+23169097     O`zbekiston tumani     13,196,655,564 13,196,655,564  0.888
+23136408     Oltiariq tumani         3,218,764,857  3,218,764,857  0.863
+22866963     Uchko`prik tumani       1,078,809,533  1,078,809,533  0.855
+22838298     Quvasoy shahri         30,225,000,000 30,225,000,000  0.851
+23439577     O`zbekiston tumani        555,000,000    555,000,000  0.843
+23229860     Qo`qon shahri          21,760,000,000 21,760,000,000  0.843
+23229826     Farg`ona shahri           306,634,284    306,634,284  0.831
+23226474     Farg`ona shahri             5,394,126      5,394,126  0.818
+23226473     Farg`ona shahri             3,607,953      3,607,953  0.815
+23226405     Farg`ona shahri                59,049         59,049  0.810

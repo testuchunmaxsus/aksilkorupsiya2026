@@ -1,0 +1,7 @@
+https://e-auksion.uz/lot-view?lot_id=23469523
+https://e-auksion.uz/api/front/lot-info/favorites?lang=uz
+https://e-auksion.uz/api/front/common/date?lang=uz
+https://e-auksion.uz/api/front/lot-info?lot_id=23469523&lang=uz
+https://static.e-auksion.uz/images/end_auction_date.png
+https://static.e-auksion.uz/images/type_auction.png
+https://static.e-auksion.uz/images/sort_auction_icon.png

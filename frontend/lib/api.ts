@@ -73,6 +73,11 @@ export type Lot = {
   ai_summary: string | null;
   flags: Flag2[] | null;
   categories: Categories | null;
+  ml_score: number | null;
+  ml_level: string | null;
+  ml_reason: string | null;
+  ml_xgb_prob: number | null;
+  ml_iso_score: number | null;
 };
 
 export type Stats = {
