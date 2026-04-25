@@ -78,6 +78,7 @@ export type Lot = {
   ml_reason: string | null;
   ml_xgb_prob: number | null;
   ml_iso_score: number | null;
+  scraped_at?: string | null;
 };
 
 export type Stats = {
