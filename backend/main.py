@@ -1,6 +1,7 @@
 """FastAPI backend for AuksionWatch."""
 import csv
 import io
+import os
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -20,8 +21,26 @@ from backend.models import Lot
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    # Auto-seed on first boot if DB is empty (Railway / fresh deploy)
+    if os.getenv("AUTOSEED", "1") != "0":
+        try:
+            with Session(engine) as session:
+                if session.exec(select(func.count(Lot.id))).one() == 0:
+                    seed_path = Path(__file__).parent.parent / "data" / "lots_parsed.json"
+                    if seed_path.exists():
+                        from backend.reingest_v11 import main as reingest_main  # noqa
+                        print(f"[startup] DB empty — seeding from {seed_path}")
+                        reingest_main()
+                        # rescore so categories + provenance attached
+                        from backend.rescore_all import main as rescore_main
+                        rescore_main()
+        except Exception as e:
+            print(f"[startup] auto-seed skipped: {e}")
     yield
 
+
+# CORS — env-driven allowlist (default: open for public read API)
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 
 app = FastAPI(
     title="AuksionWatch API",
@@ -29,15 +48,21 @@ app = FastAPI(
         "E-AUKSION antikorrupsiya monitoring tizimi. "
         "OECD/OCP standartlari asosida 5 toifali risk tahlili."
     ),
-    version="1.1.0",
+    version="1.2.0",
     lifespan=lifespan,
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/healthz")
+def healthz():
+    """Railway healthcheck endpoint."""
+    return {"status": "ok"}
 
 
 @app.get("/")
@@ -65,8 +90,8 @@ def list_lots(
     seller_id: Optional[int] = None,
     seller_hint: Optional[str] = None,
     q: Optional[str] = None,
-    limit: int = Query(50, le=500),
-    offset: int = 0,
+    limit: int = Query(50, ge=1, le=2000),
+    offset: int = Query(0, ge=0),
     session: Session = Depends(get_session),
 ):
     stmt = select(Lot).where(Lot.risk_score >= risk_min)

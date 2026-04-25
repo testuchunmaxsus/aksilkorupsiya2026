@@ -28,7 +28,12 @@
     {
       "id": "uz-pep-003",
       "name": "Erkinjon Turdimov",
-      "aliases": ["Turdimov E", "Turdimov Erkin"],
+      "aliases": [
+        "Эркинжон Турдимов",
+        "Турдимов Эркинжон",
+        "Turdimov E",
+        "Turdimov Erkin"
+      ],
       "position": "Samarqand viloyati hokimi (sobiq)",
       "level": "regional",
       "category": "executive",

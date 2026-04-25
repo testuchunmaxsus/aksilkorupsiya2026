@@ -1,0 +1,44 @@
+# VCS
+.git
+.gitignore
+
+# Local virtualenv
+.venv
+venv
+__pycache__
+*.pyc
+
+# Node
+**/node_modules
+**/.next
+frontend/.next
+
+# Local data (DB will be on volume; large dumps not needed in image)
+data/*.db
+data/*.db-journal
+data/lots_raw.json
+data/lots_api.json
+data/lot_ids.json
+data/api_sniff.json
+data/api_sample.json
+
+# Local secrets
+.env
+.env.local
+bot/.env
+
+# IDE / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Tests / docs (not needed at runtime)
+tests
+docs
+chetel
+*.md
+!README.md
+
+# Logs
+*.log
