@@ -48,6 +48,51 @@ engine = create_engine(DATABASE_URL, **engine_kwargs)
 def init_db() -> None:
     from . import models  # noqa: F401  — register tables
     SQLModel.metadata.create_all(engine)
+    _ensure_columns()
+
+
+# Lightweight idempotent migration — adds new columns to an existing `lot` table
+# without breaking SQLite/Postgres-native behaviour. SQLAlchemy `create_all` does
+# not alter existing tables, so we run targeted `ALTER TABLE ADD COLUMN IF NOT EXISTS`.
+_REQUIRED_COLUMNS: list[tuple[str, str, str]] = [
+    # (column_name, sqlite_type, postgres_type)
+    ("appraised_price", "REAL", "DOUBLE PRECISION"),
+    ("times_auctioned", "INTEGER", "INTEGER"),
+    ("seller_name", "TEXT", "TEXT"),
+    ("seller_id", "INTEGER", "BIGINT"),
+    ("is_descending", "BOOLEAN", "BOOLEAN"),
+    ("categories", "JSON", "JSONB"),
+    ("ml_score", "REAL", "DOUBLE PRECISION"),
+    ("ml_level", "TEXT", "TEXT"),
+    ("ml_reason", "TEXT", "TEXT"),
+    ("ml_xgb_prob", "REAL", "DOUBLE PRECISION"),
+    ("ml_iso_score", "REAL", "DOUBLE PRECISION"),
+]
+
+
+def _ensure_columns() -> None:
+    """Idempotent ALTER TABLE migration for evolving Lot schema."""
+    from sqlalchemy import inspect, text
+    try:
+        inspector = inspect(engine)
+        if "lot" not in inspector.get_table_names():
+            return  # create_all just made it — already has all columns
+        existing = {c["name"] for c in inspector.get_columns("lot")}
+        with engine.begin() as conn:
+            for col, sqlite_type, pg_type in _REQUIRED_COLUMNS:
+                if col in existing:
+                    continue
+                col_type = sqlite_type if IS_SQLITE else pg_type
+                conn.execute(text(f'ALTER TABLE lot ADD COLUMN {col} {col_type}'))
+                print(f"[migrate] added column lot.{col} {col_type}", flush=True)
+            # Indexes (idempotent)
+            try:
+                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_lot_seller_id ON lot(seller_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_lot_ml_score ON lot(ml_score)"))
+            except Exception as ix_e:
+                print(f"[migrate] index warning: {ix_e}", flush=True)
+    except Exception as e:
+        print(f"[migrate] skipped: {e}", flush=True)
 
 
 def get_session():
