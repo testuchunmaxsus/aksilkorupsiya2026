@@ -29,35 +29,53 @@ AuksionWatch — 3 ta service'ni Railway'ga deploy qilish.
 
 ---
 
-## 2. Backend service (FastAPI)
+## 2. Backend service (FastAPI) — RECOMMENDED with Postgres
 
-### Yaratish
+### A) Postgres-aware deploy (recommended)
+
+#### Step 1 — Add Postgres
 ```
-Railway dashboard → New Project → Deploy from GitHub repo
-└── auksilkorupsiya2026 (root: /)
-    └── Settings → Root Directory: leave empty
-    └── Build: Docker (auto-detects backend/Dockerfile via railway.json)
+Railway → + New → Database → Add PostgreSQL
+└── This creates a Postgres service and exposes DATABASE_URL automatically.
 ```
 
-### Environment variables
+#### Step 2 — Deploy backend
+```
++ New → GitHub repo → auksilkorupsiya2026
+└── Settings → Root Directory: leave empty (uses /backend/Dockerfile via railway.json)
+└── Variables → Reference: DATABASE_URL (linked from Postgres service)
+```
+
+Railway auto-injects `DATABASE_URL` (format `postgres://user:pass@host:port/db`).
+The backend code rewrites it to `postgresql+psycopg2://...` automatically — no manual change needed.
+
+#### Environment variables
 | Variable | Qiymat | Tavsif |
 |---|---|---|
-| `PORT` | `8000` (Railway sets) | HTTP port |
-| `DATABASE_URL` | `sqlite:////app/data/auksionwatch.db` | DB path on volume |
-| `ALLOWED_ORIGINS` | `https://auksionwatch.up.railway.app,https://auksionwatch.uz` | Frontend domain(s), comma-separated |
-| `AUTOSEED` | `1` | Auto-import lots_parsed.json on first boot |
+| `DATABASE_URL` | (auto from Postgres ref) | postgres://... — backend normalizes |
+| `ALLOWED_ORIGINS` | `https://auksionwatch.up.railway.app` | Frontend domain(s), comma-separated |
+| `AUTOSEED` | `1` | Birinchi bo'sh DB'ga lots_parsed.json import qiladi (~10K lot, ~1 daqiqa) |
+| `PORT` | (Railway auto) | HTTP port |
 
-### Volume
-Settings → Volumes → New Volume:
-- Name: `data`
-- Mount Path: `/app/data`
-- Size: 2 GB
+#### Healthcheck
+Settings → Health Check Path: `/healthz` (Dockerfile'da ham bor)
 
-### Healthcheck
-Set in Settings → Health Check Path: `/healthz`
+#### Domain
+Settings → Networking → Generate Domain → `auksionwatch-api.up.railway.app`
 
-### Domain
-Settings → Networking → Generate Domain → e.g. `auksionwatch-api.up.railway.app`
+---
+
+### B) SQLite + Volume (oddiy, lekin scaling cheklovi)
+
+Bitta replica uchun yaroqli. Ko'p replica bo'lsa Postgres'ga o'ting.
+
+```
+Settings → Volumes → New Volume
+  Name: data
+  Mount Path: /app/data
+  Size: 2 GB
+```
+Variables: `DATABASE_URL = sqlite:////app/data/auksionwatch.db`
 
 ---
 
