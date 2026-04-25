@@ -5,6 +5,8 @@ import { RiskBadge, RiskGauge } from "@/components/RiskBadge";
 import { CategoryBars } from "@/components/CategoryBars";
 import { PrintButton } from "@/components/PrintButton";
 import { MLPanel } from "@/components/MLPanel";
+import { VerdictHeader } from "@/components/Verdict";
+import { ActionBox } from "@/components/ActionBox";
 
 export const dynamic = "force-dynamic";
 
@@ -52,55 +54,64 @@ export default async function LotDetail({
         </div>
       </div>
 
-      {/* HEADER CARD */}
-      <header className="card p-6 md:p-8">
-        <div className="grid lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8">
-            <div className="kicker mb-2">
-              LOT №{lot.id}
-              {lot.region && (
-                <>
-                  {" · "}
-                  {REGION_NAMES[lot.region] || lot.region}
-                </>
-              )}
-              {lot.district ? ` · ${lot.district.toUpperCase()}` : ""}
-            </div>
-            <h1 className="headline text-3xl md:text-4xl text-[var(--fg)]">
-              {lot.title || lot.lot_type || `Lot #${lot.id}`}
-            </h1>
-            {lot.address && (
-              <p className="mt-3 text-[var(--fg-mute)] text-base">
-                📍 {lot.address}
-              </p>
-            )}
-            <div className="mt-4 flex items-center gap-4 flex-wrap text-xs">
-              <a
-                href={lot.url}
-                target="_blank"
-                rel="noreferrer"
-                className="link-u"
-              >
-                🔗 Manba: e-auksion.uz
-              </a>
-              {lot.scraped_at && (
-                <span className="text-[var(--fg-dim)] mono">
-                  YIG&apos;ILGAN: {String(lot.scraped_at).slice(0, 10)}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="lg:col-span-4 lg:border-l lg:border-[var(--line)] lg:pl-6">
-            <RiskGauge score={lot.risk_score} level={lot.risk_level} />
-            {lot.ai_summary && (
-              <p className="mt-4 text-sm text-[var(--fg)] leading-relaxed border-t border-[var(--line)] pt-3">
-                <span className="kicker mb-1 block">AI XULOSA</span>
-                {lot.ai_summary}
-              </p>
-            )}
-          </div>
+      {/* TITLE — sodda, qisqa */}
+      <header className="mb-4">
+        <div className="kicker mb-2">
+          LOT №{lot.id}
+          {lot.region && (
+            <>
+              {" · "}
+              {REGION_NAMES[lot.region] || lot.region}
+            </>
+          )}
+          {lot.district ? ` · ${lot.district.toUpperCase()}` : ""}
+        </div>
+        <h1 className="headline text-2xl md:text-3xl text-[var(--fg)]">
+          {lot.title || lot.lot_type || `Lot #${lot.id}`}
+        </h1>
+        {lot.address && (
+          <p className="mt-2 text-[var(--fg-mute)] text-sm">📍 {lot.address}</p>
+        )}
+        <div className="mt-3 flex items-center gap-4 flex-wrap text-xs">
+          <a
+            href={lot.url}
+            target="_blank"
+            rel="noreferrer"
+            className="link-u"
+          >
+            🔗 Manba: e-auksion.uz
+          </a>
+          {lot.scraped_at && (
+            <span className="text-[var(--fg-dim)] mono">
+              YIG&apos;ILGAN: {String(lot.scraped_at).slice(0, 10)}
+            </span>
+          )}
         </div>
       </header>
+
+      {/* SODDA TIL VERDICT — eng tepada, har kim tushunadi */}
+      <VerdictHeader lot={lot} />
+
+      {/* AI XULOSA (agar mavjud bo'lsa) */}
+      {lot.ai_summary && (
+        <div className="mt-3 rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] p-4 text-sm text-[var(--fg)]">
+          <span className="kicker block mb-1">AI XULOSA</span>
+          {lot.ai_summary}
+        </div>
+      )}
+
+      {/* TEXNIK TAFSILOT — yashirin (collapsible). Default: yopiq. */}
+      <details className="mt-4 group no-print">
+        <summary className="cursor-pointer text-sm text-[var(--fg-mute)] hover:text-[var(--primary)] inline-flex items-center gap-2 list-none">
+          <span className="inline-block w-4 transition-transform group-open:rotate-90">
+            ▶
+          </span>
+          Texnik tafsilot ko&apos;rish (risk score, ML ensemble, kategoriyalar)
+        </summary>
+        <div className="card p-6 mt-3">
+          <RiskGauge score={lot.risk_score} level={lot.risk_level} />
+        </div>
+      </details>
 
       {/* PEP MATCH BANNER */}
       {pepFlag?.pep && (
@@ -389,33 +400,12 @@ export default async function LotDetail({
             )}
           </div>
 
-          <div className="card p-5">
-            <div className="kicker mb-3">FUQARO HARAKATI</div>
-            <ul className="space-y-2.5 text-sm text-[var(--fg-mute)]">
-              <li className="flex gap-3">
-                <span className="text-[var(--primary)]">→</span>
-                Bu lotni boshqa shaxslar bilan ulashing
-              </li>
-              <li className="flex gap-3">
-                <span className="text-[var(--primary)]">→</span>
-                <a className="link-u" href="https://anticorruption.uz" target="_blank" rel="noreferrer">
-                  Aksilkorrupsiya agentligiga signal
-                </a>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-[var(--primary)]">→</span>
-                <a className="link-u" href="https://decisions.esud.uz" target="_blank" rel="noreferrer">
-                  decisions.esud.uz
-                </a>{" "}
-                da sud ishlarini tekshiring
-              </li>
-              <li className="flex gap-3">
-                <span className="text-[var(--primary)]">→</span>
-                Sotuvchi tarixini chuqurroq o&apos;rganing
-              </li>
-            </ul>
-          </div>
         </aside>
+      </div>
+
+      {/* HARAKAT QILIM TUGMALARI — eng pastda, foydalanuvchi nima qilishni biladi */}
+      <div className="mt-8">
+        <ActionBox lot={lot} />
       </div>
     </main>
   );

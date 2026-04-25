@@ -4,6 +4,7 @@ import { StatCard } from "@/components/StatCard";
 import { RiskBadge } from "@/components/RiskBadge";
 import { RegionBars } from "@/components/RegionBars";
 import { TrendChart } from "@/components/TrendChart";
+import { Onboarding } from "@/components/Onboarding";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,9 @@ export default async function HomePage() {
 
   return (
     <main>
+      {/* Birinchi tashriffda — "Bu nima?" banner (3 qadam tushuntirish) */}
+      <Onboarding />
+
       {/* HERO — gov-portal style */}
       <section className="hero-gradient border-b border-[var(--line)]">
         <div className="mx-auto max-w-7xl px-6 py-14 md:py-20 grid lg:grid-cols-12 gap-10 items-center">
