@@ -75,15 +75,25 @@ def num(v):
 
 
 def seller_hint_from_name(name: str | None) -> str:
+    """Sotuvchi nomidan egalik turini taxminlash.
+
+    MUHIM kontekst: Bu funksiya Davaktiv (Davlat aktivlarini boshqarish
+    agentligi) ning rasmiy Excel hisobotidan kelgan lotlar uchun. Demak
+    barcha lotlar Davaktiv kanaliga tegishli — ya'ni davlat balansidagi
+    yoki davlat foydasiga sotilayotgan mol-mulk. Sud orqali musodara
+    qilingan shaxsiy mol-mulk (MIB) odatda alohida portalda (e-ijro.uz)
+    o'tadi.
+    """
     if not name:
-        return "unknown"
-    # Farg'ona excel — all are individual buyurtmachi (seller). Categorize:
-    n = name.upper()
-    if "DAVAKTIV" in n or "ДАВАКТИВ" in n:
+        # Davaktiv hisobotidan kelgan lekin nom bo'sh — baribir davaktiv kanali
         return "davaktiv"
+    n = name.upper()
     if "BANK" in n or "БАНК" in n:
         return "bank"
-    return "individual"
+    if "MIB" in n or "МИБ" in n or "SUD" in n or "СУД" in n:
+        return "court"
+    # Default — Davaktiv hisoboti kontekstida davlat aktivi
+    return "davaktiv"
 
 
 def seller_id_from_name(name: str | None) -> int | None:

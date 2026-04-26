@@ -4,7 +4,7 @@ import { StatCard } from "@/components/StatCard";
 import { RiskBadge } from "@/components/RiskBadge";
 import { RegionBars } from "@/components/RegionBars";
 import { TrendChart } from "@/components/TrendChart";
-import { Onboarding } from "@/components/Onboarding";
+import { RiskDistribution } from "@/components/RiskDistribution";
 
 export const dynamic = "force-dynamic";
 
@@ -17,9 +17,6 @@ export default async function HomePage() {
 
   return (
     <main>
-      {/* Birinchi tashriffda — "Bu nima?" banner (3 qadam tushuntirish) */}
-      <Onboarding />
-
       {/* HERO — gov-portal style */}
       <section className="hero-gradient border-b border-[var(--line)]">
         <div className="mx-auto max-w-7xl px-6 py-14 md:py-20 grid lg:grid-cols-12 gap-10 items-center">
@@ -34,10 +31,24 @@ export default async function HomePage() {
               <span className="text-[var(--red)]">.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base md:text-lg text-[var(--fg-mute)] leading-relaxed">
-              Davlat mol-mulki auksionlaridagi shubhali sxemalarni xalqaro
-              standartlar (OECD, UNCAC, OCDS, FATF) asosida AI yordamida
-              aniqlovchi mustaqil monitoring tizimi.
+              <strong>e-auksion.uz</strong> platformasidagi davlat aktivlari (Davaktiv)
+              va sud orqali musodara qilingan mol-mulk auksionlarini xalqaro
+              standartlar (OECD, UNCAC, OCDS, FATF) asosida AI yordamida tahlil
+              qiluvchi mustaqil monitoring tizimi.
             </p>
+            {/* Sotuvchi turlari — har lotda OwnershipBadge bilan ko'rsatiladi */}
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--fg-dim)]">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--primary-deep)] px-2 py-0.5">
+                🏛 Davlat mol-mulki
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 text-amber-900 px-2 py-0.5">
+                ⚖ Musodara (sud/MIB)
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-50 text-slate-800 px-2 py-0.5">
+                🏢 Yuridik shaxs
+              </span>
+              <span>— har lot kartasida belgilangan</span>
+            </div>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/map" className="btn btn-primary">
                 Xaritani ochish
@@ -115,6 +126,13 @@ export default async function HomePage() {
               icon="💰"
             />
           </div>
+        </section>
+      )}
+
+      {/* RISK DISTRIBUTION — false positive ulushini ko'rsatish */}
+      {stats && stats.distribution && (
+        <section className="mx-auto max-w-7xl px-6 mt-12">
+          <RiskDistribution stats={stats} />
         </section>
       )}
 

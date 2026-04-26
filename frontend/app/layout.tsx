@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { NavBar } from "@/components/NavBar";
+import { Onboarding } from "@/components/Onboarding";
 import Link from "next/link";
 
 const inter = Inter({
@@ -19,7 +20,7 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "AuksionWatch — E-AUKSION ochiq nazorat tizimi",
   description:
-    "Davlat mol-mulki auksionlaridagi shubhali sxemalarni xalqaro standartlar (OECD, UNCAC, OCDS) asosida AI yordamida aniqlovchi mustaqil monitoring tizimi.",
+    "e-auksion.uz: davlat aktivlari va sud orqali musodara qilingan mol-mulk auksionlaridagi shubhali sxemalarni xalqaro standartlar (OECD, UNCAC, OCDS, FATF) asosida AI yordamida aniqlovchi mustaqil monitoring tizimi.",
 };
 
 export default function RootLayout({
@@ -48,6 +49,8 @@ export default function RootLayout({
         }}
       >
         <NavBar />
+        {/* Onboarding har sahifada mount bo'lib turadi — "?" tugmasi yoki ?welcome=1 bilan ochilishi mumkin */}
+        <Onboarding />
         <div className="flex-1">{children}</div>
 
         <footer className="mt-20 bg-[var(--bg-elev)] border-t border-[var(--line)]">
@@ -61,8 +64,9 @@ export default function RootLayout({
                 draggable={false}
               />
               <p className="text-sm text-[var(--fg-mute)] leading-relaxed">
-                E-AUKSION ochiq nazorat tizimi. Davlat mol-mulki auksionlarini
-                xalqaro standartlar asosida tahlil qiluvchi mustaqil monitoring tizim.
+                E-AUKSION ochiq nazorat tizimi. Davlat aktivlari (Davaktiv) va
+                sud orqali musodara qilingan mol-mulk auksionlarini xalqaro
+                standartlar asosida tahlil qiluvchi mustaqil monitoring tizim.
               </p>
             </div>
 
@@ -81,9 +85,9 @@ export default function RootLayout({
               <div className="kicker mb-3">RESURSLAR</div>
               <ul className="space-y-2 text-sm">
                 <li><Link className="text-[var(--fg-mute)] hover:text-[var(--primary)]" href="/methodology">Metodologiya</Link></li>
-                <li><a className="text-[var(--fg-mute)] hover:text-[var(--primary)]" target="_blank" rel="noreferrer" href="http://127.0.0.1:8000/docs">REST API hujjati</a></li>
-                <li><a className="text-[var(--fg-mute)] hover:text-[var(--primary)]" target="_blank" rel="noreferrer" href="http://127.0.0.1:8000/api/export.csv">CSV eksport</a></li>
-                <li><a className="text-[var(--fg-mute)] hover:text-[var(--primary)]" target="_blank" rel="noreferrer" href="http://127.0.0.1:8000/api/export.json">JSON eksport</a></li>
+                <li><a className="text-[var(--fg-mute)] hover:text-[var(--primary)]" target="_blank" rel="noreferrer" href={`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/docs`}>REST API hujjati</a></li>
+                <li><a className="text-[var(--fg-mute)] hover:text-[var(--primary)]" target="_blank" rel="noreferrer" href={`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/export.csv`}>CSV eksport</a></li>
+                <li><a className="text-[var(--fg-mute)] hover:text-[var(--primary)]" target="_blank" rel="noreferrer" href={`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/export.json`}>JSON eksport</a></li>
               </ul>
             </div>
 

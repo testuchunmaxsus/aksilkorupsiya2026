@@ -2,6 +2,7 @@
 // my.gov.uz ga o'xshatib 2 ta strip: yuqori (mini-bar) + asosiy (logo + menu).
 import Link from "next/link";
 import { ThemeToggle } from "./ThemeToggle";
+import { HelpButton } from "./HelpButton";
 
 export function NavBar() {
   return (
@@ -14,12 +15,14 @@ export function NavBar() {
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 live-dot" />
             <span>OCHIQ NAZORAT TIZIMI · MUSTAQIL</span>
           </div>
-          {/* O'ng tomon — quick links */}
+          {/* O'ng tomon — quick links + help + theme */}
           <div className="flex items-center gap-3 text-white/70 mono">
+            {/* "?" — Onboarding banner'ni istalgan vaqtda qayta ochish */}
+            <HelpButton />
+            <span className="opacity-40">|</span>
             <span>UZ</span>
             <span className="opacity-40">|</span>
-            {/* Backend Swagger UI */}
-            <a className="hover:text-white" href="http://127.0.0.1:8000/docs" target="_blank" rel="noreferrer">
+            <a className="hover:text-white" href={`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/docs`} target="_blank" rel="noreferrer">
               API
             </a>
             <span className="opacity-40">|</span>
@@ -27,7 +30,6 @@ export function NavBar() {
               Metodologiya
             </Link>
             <span className="opacity-40">|</span>
-            {/* Light/Dark toggle (localStorage'da saqlanadi) */}
             <ThemeToggle />
           </div>
         </div>

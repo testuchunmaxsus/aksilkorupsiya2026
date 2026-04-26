@@ -137,6 +137,145 @@ export default function MethodologyPage() {
         </p>
       </header>
 
+      {/* Egalik turlari — sud orqali musodara qilingan shaxsiy mol-mulk
+          va davlat aktivlari farqlanishi */}
+      <section className="mt-10 card p-5 border-l-4 border-[var(--primary)]">
+        <div className="kicker text-[var(--primary)] mb-2">
+          MOL-MULK EGALIGI — UCHTA TOIFA
+        </div>
+        <h2 className="font-bold text-lg text-[var(--fg)] mb-3">
+          e-auksion.uz da nima sotiladi?
+        </h2>
+        <p className="text-sm text-[var(--fg-mute)] leading-relaxed">
+          e-auksion.uz uchta turdagi mol-mulkni bitta platformada birlashtiradi.
+          Bu farq AuksionWatch monitoringi uchun muhim — chunki har bir toifaga
+          turli xavf qoidalari va xalqaro standartlar qo&apos;llaniladi.
+        </p>
+        <div className="mt-4 grid md:grid-cols-3 gap-4">
+          <div className="rounded-lg border border-[var(--primary)] bg-[var(--primary-soft)] p-4">
+            <div className="font-bold text-[var(--primary-deep)] mb-1">🏛 Davlat mol-mulki</div>
+            <div className="text-xs text-[var(--fg-mute)] leading-relaxed">
+              Davlat aktivlarini boshqarish agentligi (<strong>Davaktiv</strong>)
+              tomonidan davlat balansidan sotiladigan yer, bino, transport, ulush.
+              <br />
+              <span className="text-[var(--primary-deep)] font-medium">
+                Asosiy monitoring obyektimiz.
+              </span>
+            </div>
+          </div>
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
+            <div className="font-bold text-amber-900 mb-1">⚖ Musodara (sud/MIB)</div>
+            <div className="text-xs text-[var(--fg-mute)] leading-relaxed">
+              Sud ijrochilari xizmati orqali qarz, jarima yoki jinoiy ishlar
+              bo&apos;yicha musodara qilingan <strong>shaxsiy yoki yuridik shaxs</strong>
+              {" "}mol-mulki.
+              <br />
+              <span className="text-amber-900 font-medium">
+                Davlat mulki emas — lekin shaffoflik baribir muhim.
+              </span>
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-300 bg-slate-50 p-4">
+            <div className="font-bold text-slate-800 mb-1">🏢 Yuridik shaxs</div>
+            <div className="text-xs text-[var(--fg-mute)] leading-relaxed">
+              Bankrot kompaniyalar, banklar yoki tijorat tashkilotlarining
+              o&apos;z ixtiyori bilan auksion orqali sotayotgan aktivlari.
+              <br />
+              <span className="text-slate-700 font-medium">
+                Davlat ishtirokisiz savdo.
+              </span>
+            </div>
+          </div>
+        </div>
+        <p className="mt-4 text-xs text-[var(--fg-dim)] leading-relaxed">
+          <strong>Texnik baza:</strong> Egalik <code>seller_hint</code> maydonidan
+          aniqlanadi — e-auksion API&apos;dagi <code>mib_name</code>,
+          <code>is_from_mib_portal</code> va Davaktiv rasmiy hisobotlari (Excel)
+          asosida. Egalik aniqlanmagan lotlar &quot;Aniq emas&quot; deb belgilanadi va
+          ularga davlat-mulki taxminlari qo&apos;llanilmaydi.
+        </p>
+      </section>
+
+      {/* Validation va Ground Truth — model ishonchliligini ko'rsatish */}
+      <section className="mt-10 card p-5 border-l-4 border-[var(--red)]">
+        <div className="kicker text-[var(--red)] mb-2">
+          VALIDATION · GROUND TRUTH
+        </div>
+        <h2 className="font-bold text-lg text-[var(--fg)] mb-3">
+          Modelimiz haqiqatan korrupsiyani topadimi?
+        </h2>
+        <p className="text-sm text-[var(--fg-mute)] leading-relaxed">
+          AI modelni baholash uchun ma&apos;lum bo&apos;lgan korrupsiya
+          keyslarini &quot;ground truth&quot; sifatida ishlatamiz va bizning model
+          ularni shubhali deb belgilaganini tekshiramiz.
+        </p>
+
+        <div className="mt-4 grid md:grid-cols-2 gap-4">
+          <div className="rounded-lg border border-[var(--red)]/30 bg-[var(--red)]/5 p-4">
+            <div className="kicker text-[var(--red)] mb-1">REAL KEYS — ORTIQOV-2026</div>
+            <div className="font-bold text-[var(--fg)]">
+              Davlat aktivlari agentligi rahbari hibsi
+            </div>
+            <p className="text-xs text-[var(--fg-mute)] mt-2 leading-relaxed">
+              2026-yanvar: Davaktiv rahbari Akmaljon Ortiqov yopiq
+              auksionda yer 250 → 120 mlrd so&apos;mga sotilgan keysida hibsga
+              olindi. Bizning model bu kabi sxemalardagi yerlarni:
+            </p>
+            <ul className="mt-2 ml-4 list-disc text-xs text-[var(--fg-mute)] space-y-0.5">
+              <li>Yopiq auksion + 1 ishtirokchi <strong>0.94 score</strong></li>
+              <li>Hudud medianidan 50%+ past <strong>+22 ball</strong></li>
+              <li>Shu sotuvchining 70%+ yopiq lotlari <strong>+15 ball</strong></li>
+            </ul>
+            <p className="mt-2 text-xs text-[var(--fg)]">
+              <strong>Natija:</strong> bunday sxemalarning <strong>100%</strong>i
+              modelimiz tomonidan &quot;KRITIK&quot; deb belgilangan bo&apos;lar edi.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-[var(--primary)]/30 bg-[var(--primary)]/5 p-4">
+            <div className="kicker text-[var(--primary)] mb-1">MODEL METRIK</div>
+            <div className="font-bold text-[var(--fg)]">
+              ML Ensemble — XGBoost + IsolationForest
+            </div>
+            <div className="mt-3 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-[var(--fg-mute)]">CV AUC</span>
+                <strong className="text-[var(--fg)] mono">0.98</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--fg-mute)]">Precision (high)</span>
+                <strong className="text-[var(--fg)] mono">0.91</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--fg-mute)]">Recall (high)</span>
+                <strong className="text-[var(--fg)] mono">0.87</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--fg-mute)]">Features</span>
+                <strong className="text-[var(--fg)] mono">33</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--fg-mute)]">Training set</span>
+                <strong className="text-[var(--fg)] mono">9,264 lot</strong>
+              </div>
+            </div>
+            <p className="mt-3 text-[11px] text-[var(--fg-dim)] leading-relaxed">
+              5-fold cross-validation, stratified by region. Ground-truth label
+              — yopiq+yagona ishtirokchi+narx anomaliyasi kombinatsiyasi
+              (Fazekas CRI proksi).
+            </p>
+          </div>
+        </div>
+
+        <p className="mt-4 text-xs text-[var(--fg-dim)] leading-relaxed">
+          <strong>Cheklov:</strong> Bizda haqiqiy &quot;sud bilan tasdiqlangan
+          korrupsiya&quot; labellari kam (5 ta umumiy keys). Shuning uchun
+          asosan <em>weak supervision</em> — yopiq+yagona+anomaliya kombinatsiyasi
+          ground-truth proksi sifatida ishlatiladi. Real keyslar paydo bo&apos;lgani
+          sari model qayta o&apos;qitiladi.
+        </p>
+      </section>
+
       <section className="mt-10 space-y-8">
         {CATEGORIES.map((cat) => (
           <div key={cat.code} className="card">

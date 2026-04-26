@@ -119,12 +119,18 @@ def parse_lot(raw: dict) -> dict | None:
     mib_executor = raw.get("mib_executor_fio")
 
     # ── Sotuvchi turini aniqlash (heuristika) ──
-    if mib_name:
-        seller_hint = "court"               # sud orqali sotilmoqda
-    elif raw.get("is_from_mib_portal") == 1:
-        seller_hint = "mib"
+    # MUHIM: e-auksion.uz da uch xil mol-mulk sotiladi:
+    #   1) Davaktiv — DAVLAT mol-mulki (Davlat aktivlarini boshqarish agentligi)
+    #   2) MIB / sud — qarzdorlardan musodara qilingan SHAXSIY mol-mulk
+    #   3) Yuridik shaxs / bankrot biznes
+    # Default'ni "davaktiv" qilish noto'g'ri edi — auksionning katta qismi MIB
+    # orqali shaxsiy mol-mulk. Default endi "unknown".
+    if mib_name or raw.get("is_from_mib_portal") == 1:
+        seller_hint = "court"               # sud ijrochilari xizmati orqali
+    elif raw.get("is_davaktiv") == 1 or (raw.get("source") == "davaktiv"):
+        seller_hint = "davaktiv"            # rasmiy davlat aktivlari
     else:
-        seller_hint = "davaktiv"            # default — Davaktiv (Davlat aktivlari)
+        seller_hint = "unknown"             # aniqlanmadi — ko'r-ko'rona "davlat" demaymiz
 
     # ── Lot turi va auksion uslubi ──
     lot_type = localized(raw.get("confiscant_categories_name"))   # batafsil kategoriya

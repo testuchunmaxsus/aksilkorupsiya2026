@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { api, formatUZS, REGION_NAMES } from "@/lib/api";
 import { RiskBadge } from "@/components/RiskBadge";
+import { OwnershipBadge } from "@/components/OwnershipBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -84,8 +85,11 @@ export default async function LotsPage({
               <tr key={lot.id}>
                 <td>
                   <Link href={`/lot/${lot.id}`} className="block group">
-                    <div className="mono text-xs text-[var(--fg-dim)]">#{lot.id}</div>
-                    <div className="text-zinc-100 link-u line-clamp-1 max-w-md">
+                    <div className="mono text-xs text-[var(--fg-dim)] flex items-center gap-2">
+                      <span>#{lot.id}</span>
+                      <OwnershipBadge seller_hint={lot.seller_hint} size="sm" />
+                    </div>
+                    <div className="text-zinc-100 link-u line-clamp-1 max-w-md mt-1">
                       {lot.title || lot.lot_type}
                     </div>
                   </Link>
@@ -109,8 +113,11 @@ export default async function LotsPage({
                       OCHIQ
                     </span>
                   ) : (
-                    <span className="mono text-[10px] tracking-widest text-[var(--fg-dim)]" title="Aniqlanmagan — Excel hisobotida bu maydon yo'q">
-                      —
+                    <span
+                      className="mono text-[10px] tracking-widest text-[var(--fg-dim)] border border-dashed border-[var(--line)] px-1.5 py-0.5 cursor-help"
+                      title="Davaktiv Excel hisobotida 'auksion turi' maydoni yo'q. Aniqlash uchun e-auksion API'dan qo'shimcha ma'lumot kerak."
+                    >
+                      AKT NO&apos;MA&apos;LUM
                     </span>
                   )}
                 </td>

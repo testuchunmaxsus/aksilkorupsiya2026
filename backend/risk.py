@@ -264,7 +264,17 @@ def evaluate(
     flags: list[dict] = []
     pep_registry = get_registry()  # PEP watchlist singleton
 
+    # ───────── KONTEKST: sotuvchi turi ─────────
+    # Ba'zi qoidalar (monopoly_seller, PEP, gov_address, descending) faqat
+    # davlat kanalidagi lotlarga ma'no beradi. Sud ijrochilari (MIB) yoki
+    # bankrot biznes lotlariga ularni qo'llash false positive beradi.
+    seller_hint = (lot.get("seller_hint") or "").lower()
+    is_state_channel = seller_hint in ("davaktiv", "state", "gov", "")  # bo'sh = legacy excel
+    is_court_channel = seller_hint in ("court", "mib")  # sud ijrochilari kanali
+
     # ───────── A. LOW TRANSPARENCY ─────────
+    # A toifa hammaga qo'llaniladi — yopiq auksion, qisqa muddat har turdagi
+    # mol-mulk uchun shubhali (egalik turidan qat'i nazar).
     is_closed = lot.get("auction_type") == "closed"
     if is_closed:
         flags.append({
@@ -316,34 +326,38 @@ def evaluate(
         })
 
     # ───────── B. COLLUSION ─────────
-    if seller_stats and lot.get("seller_hint"):
-        st = seller_stats.get(lot["seller_hint"])
-        if st and st.get("closed_pct", 0) > 0.5:
-            flags.append({
-                "type": "seller_closed_pattern",
-                "category": "B",
-                "score": 15,
-                "title": "Sotuvchi yopiq auksion ishlatadi",
-                "desc": f"Sotuvchining {st['closed_pct']*100:.0f}% lotlari yopiq auksionda.",
-            })
-
+    # MUHIM: Bu qoidalar faqat davlat kanalidagi (Davaktiv) lotlarga.
+    # Sud ijrochilari ofislari mingga lot sotadi — bu ular ishi, korrupsiya emas.
+    # Bankrot kompaniya ham bir egada bir nechta lot sotsa — bu o'z mulki, monopoliya emas.
     seller_total = (seller_stats or {}).get(lot.get("seller_id"), {}).get("total", 0)
-    if seller_total >= 1000:
-        flags.append({
-            "type": "monopoly_seller",
-            "category": "B",
-            "score": 30,
-            "title": "Monopoliyalashgan sotuvchi",
-            "desc": f"Sotuvchida {seller_total} ta lot — mutlaq hukmron.",
-        })
-    elif seller_total >= 300:
-        flags.append({
-            "type": "dominant_seller",
-            "category": "B",
-            "score": 18,
-            "title": "Hukmron sotuvchi",
-            "desc": f"Sotuvchida {seller_total} ta lot — sezilarli mavqe.",
-        })
+    if is_state_channel:
+        if seller_stats and lot.get("seller_hint"):
+            st = seller_stats.get(lot["seller_hint"])
+            if st and st.get("closed_pct", 0) > 0.5:
+                flags.append({
+                    "type": "seller_closed_pattern",
+                    "category": "B",
+                    "score": 15,
+                    "title": "Sotuvchi yopiq auksion ishlatadi",
+                    "desc": f"Sotuvchining {st['closed_pct']*100:.0f}% lotlari yopiq auksionda.",
+                })
+
+        if seller_total >= 1000:
+            flags.append({
+                "type": "monopoly_seller",
+                "category": "B",
+                "score": 30,
+                "title": "Monopoliyalashgan sotuvchi",
+                "desc": f"Sotuvchida {seller_total} ta lot — mutlaq hukmron.",
+            })
+        elif seller_total >= 300:
+            flags.append({
+                "type": "dominant_seller",
+                "category": "B",
+                "score": 18,
+                "title": "Hukmron sotuvchi",
+                "desc": f"Sotuvchida {seller_total} ta lot — sezilarli mavqe.",
+            })
 
     # ───────── C. BID-RIGGING ─────────
     bid = lot.get("bidders_count")
@@ -382,7 +396,9 @@ def evaluate(
             "desc": "Bir necha marta sotilmagan lot.",
         })
 
-    if lot.get("is_descending"):
+    # Teskari auksion (Dutch) — Davaktiv kontekstida shubhali, MIBda esa normal.
+    # Sud ijrochilari qarzdor mol-mulkini sotish uchun ko'pincha pasaytirib boradi.
+    if lot.get("is_descending") and is_state_channel:
         flags.append({
             "type": "descending_auction",
             "category": "C",
@@ -496,9 +512,14 @@ def evaluate(
         })
 
     # ───────── PEP / Conflict-of-Interest layer (B-toifa kengayishi) ─────────
+    # MUHIM: PEP screening faqat davlat kanali (Davaktiv) lotlariga.
+    # Sud orqali musodara qilingan shaxsiy mol-mulk yoki bankrot biznes
+    # aktivlarini sotuvchining ismi PEPga o'xshashi false positive — bu odam
+    # davlat ofisida xizmat qiluvchi emas, balki mulki olib qo'yilgan shaxs.
+    # FATF R12 ham PEP qoidalarini davlat tomonidagi kontragentlarga qaratadi.
     seller_name = lot.get("seller_name")
     seller_address = lot.get("seller_address") or lot.get("address")
-    pep_match = pep_registry.match(seller_name)
+    pep_match = pep_registry.match(seller_name) if is_state_channel else None
     if pep_match:
         if pep_match["match_type"] in ("exact", "alias"):
             flags.append({
@@ -537,7 +558,9 @@ def evaluate(
                 "pep": pep_match,
             })
 
-    gov_type = pep_registry.is_government_address(seller_address)
+    # Davlat ofisi manzili — faqat davlat kanalida ma'no beradi.
+    # MIB lotida sotuvchi manzili sud ofisi — bu tabiiy hol, signal emas.
+    gov_type = pep_registry.is_government_address(seller_address) if is_state_channel else None
     if gov_type:
         flags.append({
             "type": "government_address",
@@ -550,8 +573,8 @@ def evaluate(
             ),
         })
 
-    # Family cluster (3+ sellers with same last name)
-    if seller_name and family_clusters:
+    # Family cluster (3+ sellers with same last name) — davlat kanali uchun
+    if seller_name and family_clusters and is_state_channel:
         ln = last_name(seller_name)
         if ln in family_clusters:
             flags.append({

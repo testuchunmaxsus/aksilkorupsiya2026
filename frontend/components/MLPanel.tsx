@@ -41,9 +41,23 @@ function divergenceText(rule: number, ml: number): string | null {
   );
 }
 
+// AI ishonch darajasini sodda tilga aylantirish (XGBoost ehtimoli 0..1)
+function confidenceLabel(prob: number): string {
+  if (prob >= 0.85) return "Juda yuqori (85%+)";
+  if (prob >= 0.65) return "Yuqori (65–85%)";
+  if (prob >= 0.40) return "O'rtacha (40–65%)";
+  return "Past (40% dan kam)";
+}
+
+// IsoForest anomaly score interpretatsiyasi (-0.5..0.5 oraliqda, manfiy = anomaliya)
+function anomalyLabel(score: number): string {
+  if (score < -0.15) return "Kuchli anomaliya — boshqa lotlardan keskin farq";
+  if (score < 0) return "Yengil anomaliya — biroz noaniq pattern";
+  return "Normal — boshqa lotlarga o'xshash";
+}
+
 export function MLPanel({ lot }: { lot: Lot }) {
   // ML score yo'q bo'lsa panel'ni umuman ko'rsatmaymiz
-  if (lot.ml_score === null || lot.ml_score === undefined) return null;
   if (lot.ml_score === null || lot.ml_score === undefined) return null;
   const level = lot.ml_level || "PAST";
   const color = LEVEL_COLOR[level] || "var(--fg-mute)";
@@ -75,6 +89,39 @@ export function MLPanel({ lot }: { lot: Lot }) {
       </div>
 
       <div className="px-5 py-4 space-y-3">
+        {/* Sodda tildagi AI xulosa — "bu nima degani" */}
+        <div className="rounded-lg bg-[var(--bg-soft)] border border-[var(--line)] px-3 py-2.5">
+          <div className="flex items-start gap-2">
+            <span className="text-base flex-shrink-0">🤖</span>
+            <div className="text-sm text-[var(--fg)] leading-relaxed">
+              <strong>AI xulosasi:</strong>{" "}
+              {level === "KRITIK"
+                ? "model bu lotni juda shubhali deb baholadi — yetuk korrupsiya signallari bor."
+                : level === "YUQORI"
+                ? "model lotda jiddiy xavf belgilarini topdi — tekshirish tavsiya etiladi."
+                : level === "O'RTA"
+                ? "ba'zi anomaliyalar bor, lekin keskin signal yo'q — kuzatuvga olish ma'qul."
+                : "model bu lotni normal deb baholadi — boshqa lotlardan farq qilmaydi."}
+              <details className="mt-1.5 cursor-pointer">
+                <summary className="text-xs text-[var(--primary)] hover:underline list-none">
+                  Bu raqamlar nima degani? ▾
+                </summary>
+                <div className="mt-2 text-xs text-[var(--fg-mute)] leading-relaxed">
+                  ML modelimiz har lotni 33 ta xususiyat (narx, takror, sotuvchi
+                  tarixi, va h.k.) bo&apos;yicha taqqoslaydi va ikkita algoritm
+                  yordamida ball beradi:
+                  <ul className="mt-1 ml-4 list-disc space-y-0.5">
+                    <li><strong>XGBoost</strong> — &quot;bu lotning shubhali bo&apos;lish ehtimoli necha foiz?&quot;</li>
+                    <li><strong>IsolationForest</strong> — &quot;bu lot boshqalardan qanchalik farq qiladi?&quot;</li>
+                  </ul>
+                  Ikkalasi birga &quot;ensemble&quot; ball beradi (0–100). 70+ ball
+                  &quot;KRITIK&quot;, 40–70 &quot;YUQORI&quot; va h.k.
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+
         {/* Side-by-side comparison with rule engine */}
         <div className="grid grid-cols-2 gap-3 pt-1">
           <div className="rounded-lg border border-[var(--line)] p-3">
@@ -139,8 +186,8 @@ export function MLPanel({ lot }: { lot: Lot }) {
               <div className="mono tabnum text-lg font-semibold text-[var(--fg)] mt-0.5">
                 {(lot.ml_xgb_prob * 100).toFixed(1)}%
               </div>
-              <div className="mono text-[10px] text-[var(--fg-dim)]">
-                shubhali ehtimol
+              <div className="text-[11px] text-[var(--fg-mute)] mt-0.5">
+                Ishonch: <strong>{confidenceLabel(lot.ml_xgb_prob)}</strong>
               </div>
             </div>
           )}
@@ -150,8 +197,8 @@ export function MLPanel({ lot }: { lot: Lot }) {
               <div className="mono tabnum text-lg font-semibold text-[var(--fg)] mt-0.5">
                 {lot.ml_iso_score.toFixed(3)}
               </div>
-              <div className="mono text-[10px] text-[var(--fg-dim)]">
-                anomaly score
+              <div className="text-[11px] text-[var(--fg-mute)] mt-0.5">
+                {anomalyLabel(lot.ml_iso_score)}
               </div>
             </div>
           )}

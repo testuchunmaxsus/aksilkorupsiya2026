@@ -1,21 +1,39 @@
 "use client";
-// Birinchi tashriffda chiqadigan "Bu nima?" banner.
-// localStorage'da `aw_onboarded=1` saqlangach qayta ko'rinmaydi.
+// Birinchi tashriffda ko'rinadigan "Bu nima?" banner.
+// Keyin localStorage'da saqlanadi, lekin har vaqt qayta ochish mumkin:
+//   - URL'da ?welcome=1 bo'lsa
+//   - Boshqa joydan window.dispatchEvent(new Event("aw:show-onboarding")) chaqirilsa
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "aw_onboarded";
+const SHOW_EVENT = "aw:show-onboarding";
+
+// Tashqi joylardan chaqirish uchun helper (NavBar tugmasi ishlatadi)
+export function openOnboarding() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(SHOW_EVENT));
+  }
+}
 
 export function Onboarding() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
+    // 1) Birinchi tashriff bo'lsa avtomatik ko'rsatish
     try {
-      if (!localStorage.getItem(STORAGE_KEY)) {
+      const url = new URL(window.location.href);
+      const force = url.searchParams.get("welcome") === "1";
+      if (force || !localStorage.getItem(STORAGE_KEY)) {
         setShow(true);
       }
     } catch {
-      /* private mode — banner ko'rinmaydi */
+      /* private mode */
     }
+
+    // 2) Boshqa joydan event keladi — ochamiz
+    const handler = () => setShow(true);
+    window.addEventListener(SHOW_EVENT, handler);
+    return () => window.removeEventListener(SHOW_EVENT, handler);
   }, []);
 
   const dismiss = () => {
@@ -23,6 +41,14 @@ export function Onboarding() {
       localStorage.setItem(STORAGE_KEY, "1");
     } catch {}
     setShow(false);
+    // URL'dan ?welcome=1 ni olib tashlash (toza tarix uchun)
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has("welcome")) {
+        url.searchParams.delete("welcome");
+        window.history.replaceState({}, "", url.toString());
+      }
+    } catch {}
   };
 
   if (!show) return null;
@@ -82,13 +108,32 @@ export function Onboarding() {
               >
                 Boshlash
               </button>
-              <a
-                href="/lot/23439577"
-                onClick={dismiss}
+              <button
+                onClick={async () => {
+                  // Eng yuqori risk score'li lotni dinamik topib o'sha sahifaga o'tamiz.
+                  // Hardcoded lot id ishonchsiz — DB o'zgarib turadi.
+                  try {
+                    const apiBase =
+                      process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+                    const r = await fetch(
+                      `${apiBase}/api/lots?risk_level=high&limit=1`,
+                      { cache: "no-store" }
+                    );
+                    const d = await r.json();
+                    const id = d?.items?.[0]?.id;
+                    dismiss();
+                    if (id) window.location.href = `/lot/${id}`;
+                    else window.location.href = "/lots?risk_level=high";
+                  } catch {
+                    dismiss();
+                    window.location.href = "/lots?risk_level=high";
+                  }
+                }}
                 className="btn btn-outline"
+                type="button"
               >
-                Demo lot ko'rsatish
-              </a>
+                Demo lot ko&apos;rsatish
+              </button>
               <a
                 href="/methodology"
                 className="text-sm text-[var(--primary)] hover:underline ml-1"

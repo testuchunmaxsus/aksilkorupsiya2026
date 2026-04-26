@@ -98,12 +98,18 @@ export type Stats = {
   by_region: { region: string; count: number }[];
   high_risk_by_region: { region: string; high_count: number }[];
   categories?: { code: string; lots_with_signal: number; avg_score: number }[];
+  distribution?: {
+    high: { count: number; pct: number };
+    medium: { count: number; pct: number };
+    low: { count: number; pct: number };
+  };
 };
 
 export type SellerRow = {
   seller_id: number;
   seller_name: string | null;
   region: string | null;
+  seller_hint: string | null;
   total_lots: number;
   closed_count: number;
   high_risk_count: number;
@@ -157,8 +163,10 @@ export const api = {
       high_risk_count: number;
       items: Lot[];
     }>(`/api/firms/${encodeURIComponent(sellerHint)}`),
-  sellers: (limit = 20) =>
-    get<{ items: SellerRow[] }>(`/api/sellers?limit=${limit}`),
+  sellers: (limit = 20, ownership?: string) =>
+    get<{ items: SellerRow[] }>(
+      `/api/sellers?limit=${limit}${ownership ? `&ownership=${ownership}` : ""}`
+    ),
   timeline: () =>
     get<{
       series: {

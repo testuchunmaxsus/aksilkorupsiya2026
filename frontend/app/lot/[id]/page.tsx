@@ -7,6 +7,8 @@ import { PrintButton } from "@/components/PrintButton";
 import { MLPanel } from "@/components/MLPanel";
 import { VerdictHeader } from "@/components/Verdict";
 import { ActionBox } from "@/components/ActionBox";
+import { OwnershipBadge } from "@/components/OwnershipBadge";
+import { maskSellerName } from "@/lib/pii";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +75,8 @@ export default async function LotDetail({
           <p className="mt-2 text-[var(--fg-mute)] text-sm">📍 {lot.address}</p>
         )}
         <div className="mt-3 flex items-center gap-4 flex-wrap text-xs">
+          {/* Egalik turi — Davaktiv (davlat) / MIB (musodara) / yuridik shaxs */}
+          <OwnershipBadge seller_hint={lot.seller_hint} />
           <a
             href={lot.url}
             target="_blank"
@@ -81,9 +85,20 @@ export default async function LotDetail({
           >
             🔗 Manba: e-auksion.uz
           </a>
+          {/* Auksion sanasi — agar mavjud bo'lsa start_time'ni ko'rsatamiz.
+              scraped_at faqat qachon DB'ga yozilganini bildiradi va u
+              foydalanuvchini chalg'itishi mumkin (haqiqiy auksion sanasi emas). */}
+          {lot.start_time && (
+            <span className="text-[var(--fg-mute)] mono" title="Auksion boshlanish sanasi">
+              📅 AUKSION: {String(lot.start_time).slice(0, 10)}
+            </span>
+          )}
           {lot.scraped_at && (
-            <span className="text-[var(--fg-dim)] mono">
-              YIG&apos;ILGAN: {String(lot.scraped_at).slice(0, 10)}
+            <span
+              className="text-[var(--fg-dim)] mono"
+              title="Bu lot platformaga yozilgan sana (auksion sanasi emas)"
+            >
+              · DB&apos;ga yozilgan: {String(lot.scraped_at).slice(0, 10)}
             </span>
           )}
         </div>
@@ -197,7 +212,7 @@ export default async function LotDetail({
               />
               <Facts
                 rows={[
-                  ["Sotuvchi", lot.seller_name || lot.seller_hint || "—"],
+                  ["Sotuvchi", maskSellerName(lot.seller_name, lot.seller_hint) || lot.seller_hint || "—"],
                   ["Boshlanish", lot.start_time],
                   ["Tugash", lot.end_time || lot.deadline],
                   ["Holat", lot.status],
