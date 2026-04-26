@@ -128,23 +128,30 @@ def list_lots(
     offset: int = Query(0, ge=0),           # pagination
     session: Session = Depends(get_session),
 ):
-    stmt = select(Lot).where(Lot.risk_score >= risk_min)
+    # Filter shartlarini bir marta yig'amiz — count va items uchun bir xil
+    base = select(Lot).where(Lot.risk_score >= risk_min)
     if region:
-        stmt = stmt.where(Lot.region == region)
+        base = base.where(Lot.region == region)
     if auction_type:
-        stmt = stmt.where(Lot.auction_type == auction_type)
+        base = base.where(Lot.auction_type == auction_type)
     if risk_level:
-        stmt = stmt.where(Lot.risk_level == risk_level)
+        base = base.where(Lot.risk_level == risk_level)
     if seller_id:
-        stmt = stmt.where(Lot.seller_id == seller_id)
+        base = base.where(Lot.seller_id == seller_id)
     if seller_hint:
-        stmt = stmt.where(Lot.seller_hint == seller_hint)
+        base = base.where(Lot.seller_hint == seller_hint)
     if q:
         like = f"%{q}%"
-        stmt = stmt.where(or_(Lot.title.like(like), Lot.address.like(like), Lot.seller_name.like(like)))
-    stmt = stmt.order_by(Lot.risk_score.desc()).limit(limit).offset(offset)
-    items = session.exec(stmt).all()
-    return {"count": len(items), "items": items}
+        base = base.where(or_(Lot.title.like(like), Lot.address.like(like), Lot.seller_name.like(like)))
+
+    # Filter bo'yicha umumiy count — paginatsiya uchun zarur
+    count_stmt = select(func.count()).select_from(base.subquery())
+    total = session.exec(count_stmt).one()
+
+    items = session.exec(
+        base.order_by(Lot.risk_score.desc()).limit(limit).offset(offset)
+    ).all()
+    return {"count": total, "items": items, "limit": limit, "offset": offset}
 
 
 @app.get("/api/lots/{lot_id}")

@@ -145,7 +145,9 @@ export const api = {
     const qs = new URLSearchParams(
       Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)]))
     ).toString();
-    return get<{ count: number; items: Lot[] }>(`/api/lots${qs ? `?${qs}` : ""}`);
+    return get<{ count: number; items: Lot[]; limit?: number; offset?: number }>(
+      `/api/lots${qs ? `?${qs}` : ""}`
+    );
   },
   lot: (id: number) => get<{ lot: Lot; related: Lot[] }>(`/api/lots/${id}`),
   redFlagsToday: (limit = 10) => get<{ items: Lot[] }>(`/api/red-flags/today?limit=${limit}`),

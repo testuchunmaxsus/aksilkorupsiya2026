@@ -2,8 +2,11 @@ import Link from "next/link";
 import { api, formatUZS, REGION_NAMES } from "@/lib/api";
 import { RiskBadge } from "@/components/RiskBadge";
 import { OwnershipBadge } from "@/components/OwnershipBadge";
+import { Pagination } from "@/components/Pagination";
 
 export const dynamic = "force-dynamic";
+
+const PER_PAGE = 50;
 
 export default async function LotsPage({
   searchParams,
@@ -13,10 +16,17 @@ export default async function LotsPage({
     auction_type?: string;
     region?: string;
     q?: string;
+    page?: string;
   }>;
 }) {
   const sp = await searchParams;
-  const params: Record<string, string | number> = { limit: 200 };
+  const page = Math.max(1, parseInt(sp.page || "1", 10) || 1);
+  const offset = (page - 1) * PER_PAGE;
+
+  const params: Record<string, string | number> = {
+    limit: PER_PAGE,
+    offset,
+  };
   if (sp.risk_level) params.risk_level = sp.risk_level;
   if (sp.auction_type) params.auction_type = sp.auction_type;
   if (sp.region) params.region = sp.region;
@@ -33,7 +43,10 @@ export default async function LotsPage({
           {activeFilter ? "Qizil bayroqlar" : "Hamma lotlar"}
         </h1>
         <p className="mt-2 mono text-sm text-[var(--fg-mute)]">
-          {data.count} ta natija topildi
+          {data.count.toLocaleString()} ta natija topildi
+          {data.count > PER_PAGE && (
+            <> · sahifa <strong className="text-[var(--fg)]">{page}</strong> / {Math.ceil(data.count / PER_PAGE)}</>
+          )}
         </p>
       </header>
 
@@ -136,6 +149,15 @@ export default async function LotsPage({
           </tbody>
         </table>
       </div>
+
+      {/* Sahifalar boshqaruvi — filtrlar saqlanadi */}
+      <Pagination
+        total={data.count}
+        page={page}
+        perPage={PER_PAGE}
+        basePath="/lots"
+        searchParams={sp}
+      />
     </main>
   );
 }
