@@ -17,6 +17,7 @@ export default async function LotsPage({
     region?: string;
     q?: string;
     page?: string;
+    ownership?: string;
   }>;
 }) {
   const sp = await searchParams;
@@ -31,6 +32,7 @@ export default async function LotsPage({
   if (sp.auction_type) params.auction_type = sp.auction_type;
   if (sp.region) params.region = sp.region;
   if (sp.q) params.q = sp.q;
+  if (sp.ownership) params.ownership = sp.ownership;
 
   const data = await api.lots(params).catch(() => ({ count: 0, items: [] }));
   const activeFilter = sp.risk_level === "high";
@@ -75,6 +77,17 @@ export default async function LotsPage({
           <option value="">AUKSION: HAMMASI</option>
           <option value="closed">AUKSION: YOPIQ</option>
           <option value="open">AUKSION: OCHIQ</option>
+        </select>
+        <select
+          name="ownership"
+          defaultValue={sp.ownership || ""}
+          className="bg-[var(--bg)] border border-[var(--line)] px-3 py-2 text-sm mono text-zinc-200"
+          title="Egalik turi: Davlat (Davaktiv) / Musodara (sud) / Yuridik shaxs"
+        >
+          <option value="">EGALIK: HAMMASI</option>
+          <option value="state">🏛 DAVLAT MOL-MULKI</option>
+          <option value="confiscated">⚖ MUSODARA (SUD/MIB)</option>
+          <option value="private">🏢 YURIDIK SHAXS</option>
         </select>
         <button className="bg-[var(--red)] px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 mono tracking-wider">
           FILTR

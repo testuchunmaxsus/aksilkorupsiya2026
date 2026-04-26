@@ -5,6 +5,7 @@ import { RiskBadge } from "@/components/RiskBadge";
 import { RegionBars } from "@/components/RegionBars";
 import { TrendChart } from "@/components/TrendChart";
 import { RiskDistribution } from "@/components/RiskDistribution";
+import { OwnershipBreakdown } from "@/components/OwnershipBreakdown";
 
 export const dynamic = "force-dynamic";
 
@@ -129,9 +130,16 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* OWNERSHIP BREAKDOWN — davlat / musodara / yuridik shaxs alohida */}
+      {stats && stats.ownership_breakdown && (
+        <section className="mx-auto max-w-7xl px-6 mt-12">
+          <OwnershipBreakdown stats={stats} />
+        </section>
+      )}
+
       {/* RISK DISTRIBUTION — false positive ulushini ko'rsatish */}
       {stats && stats.distribution && (
-        <section className="mx-auto max-w-7xl px-6 mt-12">
+        <section className="mx-auto max-w-7xl px-6 mt-6">
           <RiskDistribution stats={stats} />
         </section>
       )}

@@ -123,6 +123,7 @@ def list_lots(
     risk_min: float = 0,                    # minimum risk_score
     seller_id: Optional[int] = None,        # aniq sotuvchi
     seller_hint: Optional[str] = None,      # davaktiv / court / bank
+    ownership: Optional[str] = None,        # state / confiscated / private — egalik turi bo'yicha guruh
     q: Optional[str] = None,                # qidiruv (title/address/seller)
     limit: int = Query(50, ge=1, le=2000),  # max 2000 (eksport uchun)
     offset: int = Query(0, ge=0),           # pagination
@@ -140,6 +141,13 @@ def list_lots(
         base = base.where(Lot.seller_id == seller_id)
     if seller_hint:
         base = base.where(Lot.seller_hint == seller_hint)
+    # Egalik turi bo'yicha guruhlash filter
+    if ownership == "state":
+        base = base.where(Lot.seller_hint.in_(["davaktiv", "state", "gov"]))
+    elif ownership == "confiscated":
+        base = base.where(Lot.seller_hint.in_(["court", "mib", "bank"]))
+    elif ownership == "private":
+        base = base.where(Lot.seller_hint.in_(["individual", "private"]))
     if q:
         like = f"%{q}%"
         base = base.where(or_(Lot.title.like(like), Lot.address.like(like), Lot.seller_name.like(like)))
@@ -238,6 +246,29 @@ def stats(session: Session = Depends(get_session)):
         for k in "ABCDE"
     ]
 
+    # Egalik bo'yicha taqsimot — judge "davlat mol-mulki qaerda?" deb so'rasa
+    # darrov javob berish uchun. Davlat / Musodara / Yuridik shaxs alohida.
+    state_total = session.exec(
+        select(func.count(Lot.id)).where(Lot.seller_hint.in_(["davaktiv", "state", "gov"]))
+    ).one()
+    state_high = session.exec(
+        select(func.count(Lot.id)).where(
+            Lot.seller_hint.in_(["davaktiv", "state", "gov"]),
+            Lot.risk_level == "high",
+        )
+    ).one()
+    confiscated_total = session.exec(
+        select(func.count(Lot.id)).where(Lot.seller_hint.in_(["court", "mib", "bank"]))
+    ).one()
+    private_total = session.exec(
+        select(func.count(Lot.id)).where(Lot.seller_hint.in_(["individual", "private"]))
+    ).one()
+    ownership_breakdown = {
+        "state": {"total": state_total, "high_risk": state_high},
+        "confiscated": {"total": confiscated_total},
+        "private": {"total": private_total},
+    }
+
     # Risk distribution — har darajaning foizi (judge "false positive ulushi
     # qancha?" deb so'rasa to'g'ridan-to'g'ri javob berish uchun)
     low_count = max(0, total - high - medium)
@@ -267,6 +298,7 @@ def stats(session: Session = Depends(get_session)):
         "high_risk_by_region": risk_by_region,
         "categories": categories,
         "distribution": distribution,
+        "ownership_breakdown": ownership_breakdown,
     }
 
 

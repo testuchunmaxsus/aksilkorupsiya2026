@@ -103,6 +103,11 @@ export type Stats = {
     medium: { count: number; pct: number };
     low: { count: number; pct: number };
   };
+  ownership_breakdown?: {
+    state: { total: number; high_risk: number };
+    confiscated: { total: number };
+    private: { total: number };
+  };
 };
 
 export type SellerRow = {
