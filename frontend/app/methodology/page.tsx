@@ -137,6 +137,77 @@ export default function MethodologyPage() {
         </p>
       </header>
 
+      {/* Rasmiy davlat manbalari — judge "qaerdan ma'lumot olasiz?"
+          deb so'rasa, 3 ta rasmiy manbani ko'rsatish */}
+      <section className="mt-10 card p-5 border-l-4 border-[var(--primary)]">
+        <div className="kicker text-[var(--primary)] mb-2">
+          MANBALAR · RASMIY DAVLAT OPEN DATA
+        </div>
+        <h2 className="font-bold text-lg text-[var(--fg)] mb-3">
+          AuksionWatch 3 ta rasmiy davlat manbasidan foydalanadi
+        </h2>
+        <p className="text-sm text-[var(--fg-mute)] leading-relaxed">
+          Loyiha mustaqil, lekin <strong>tasdiqlangan ochiq ma&apos;lumotlar</strong>{" "}
+          ustida ishlaydi. Barcha manbalar OECD G20 Open Government Partnership
+          standartiga muvofiq.
+        </p>
+        <div className="mt-4 grid md:grid-cols-3 gap-4">
+          <div className="rounded-lg border border-[var(--line)] p-4">
+            <div className="font-bold text-[var(--primary)] mb-1">e-auksion.uz</div>
+            <div className="text-xs text-[var(--fg-mute)] leading-relaxed">
+              Davlat mol-mulki auksioni rasmiy platformasi. Bizning asosiy data
+              manba — ochiq sitemap (3 part) + lot-info API.
+            </div>
+            <a
+              href="https://e-auksion.uz"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-block text-[11px] text-[var(--primary)] hover:underline"
+            >
+              e-auksion.uz →
+            </a>
+          </div>
+          <div className="rounded-lg border border-[var(--line)] p-4">
+            <div className="font-bold text-[var(--primary)] mb-1">gov.uz/davaktiv</div>
+            <div className="text-xs text-[var(--fg-mute)] leading-relaxed">
+              Davlat aktivlarini boshqarish agentligi rasmiy sayti. Yangi
+              keyslar (O&apos;zqishloqxo&apos;jalikmash, MobiUz, Boysunko&apos;mir, 2025-26)
+              shu yerdan kuzatiladi. Korrupsiya signali: tel.&nbsp;1082.
+            </div>
+            <a
+              href="https://gov.uz/oz/davaktiv"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-block text-[11px] text-[var(--primary)] hover:underline"
+            >
+              gov.uz/oz/davaktiv →
+            </a>
+          </div>
+          <div className="rounded-lg border border-[var(--line)] p-4">
+            <div className="font-bold text-[var(--primary)] mb-1">api-portal.gov.uz</div>
+            <div className="text-xs text-[var(--fg-mute)] leading-relaxed">
+              O&apos;zbekistonning butun-davlat open-data hub&apos;i. &quot;Yer ijara
+              o&apos;rtacha bozor qiymati 2026&quot; Excel fayl asosida regional narx
+              benchmark hisoblanadi.
+            </div>
+            <a
+              href="https://api-portal.gov.uz"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-block text-[11px] text-[var(--primary)] hover:underline"
+            >
+              api-portal.gov.uz →
+            </a>
+          </div>
+        </div>
+        <p className="mt-4 text-xs text-[var(--fg-dim)] leading-relaxed">
+          <strong>Kuzatuvdagi yangi Davaktiv keyslari (2025-2026):</strong>{" "}
+          O&apos;zqishloqxo&apos;jalikmash-xolding tugatilishi (06.01.2026), MobiUz
+          xalqaro savdosi (30.12.2025), Boysunko&apos;mir MChJ ustav kapitali
+          xususiylashtirish (29.12.2025).
+        </p>
+      </section>
+
       {/* Egalik turlari — sud orqali musodara qilingan shaxsiy mol-mulk
           va davlat aktivlari farqlanishi */}
       <section className="mt-10 card p-5 border-l-4 border-[var(--primary)]">

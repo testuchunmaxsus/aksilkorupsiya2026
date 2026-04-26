@@ -92,7 +92,7 @@ export default function RootLayout({
             </div>
 
             <div>
-              <div className="kicker mb-3">MA&apos;LUMOT MANBASI</div>
+              <div className="kicker mb-3">RASMIY MANBALAR</div>
               <ul className="space-y-2 text-sm">
                 <li>
                   <a
@@ -103,8 +103,30 @@ export default function RootLayout({
                   >
                     e-auksion.uz
                   </a>
+                  <div className="text-[var(--fg-dim)] text-xs">Sitemap + lot API</div>
                 </li>
-                <li className="text-[var(--fg-mute)] text-xs">Public sitemap + rasmiy Excel hisobotlari</li>
+                <li>
+                  <a
+                    className="link-u"
+                    target="_blank"
+                    rel="noreferrer"
+                    href="https://gov.uz/oz/davaktiv"
+                  >
+                    gov.uz/davaktiv
+                  </a>
+                  <div className="text-[var(--fg-dim)] text-xs">Davaktiv rasmiy sayti · tel.&nbsp;1082</div>
+                </li>
+                <li>
+                  <a
+                    className="link-u"
+                    target="_blank"
+                    rel="noreferrer"
+                    href="https://api-portal.gov.uz"
+                  >
+                    api-portal.gov.uz
+                  </a>
+                  <div className="text-[var(--fg-dim)] text-xs">O&apos;zbekiston open-data hub</div>
+                </li>
                 <li className="mt-3">
                   <span className="pill primary">CC BY-SA 4.0</span>
                 </li>

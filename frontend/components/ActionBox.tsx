@@ -31,6 +31,11 @@ export function ActionBox({ lot }: { lot: Lot }) {
     `Shubhali lot: #${lot.id}`,
   )}&body=${encodeURIComponent(reportText)}`;
 
+  // Davaktiv (Davlat aktivlari agentligi) rasmiy aksilkorrupsiya formasi.
+  // Davlat lotlari uchun eng to'g'ri manzil — chunki Davaktiv o'z xodimlari
+  // korrupsiyasini qabul qiladi va rasmiy javob beradi.
+  const davaktivUrl = "https://gov.uz/oz/davaktiv/anti-corruption";
+
   // decisions.esud.uz da sotuvchi nomi bilan qidiruv
   const courtUrl = lot.seller_name
     ? `https://decisions.esud.uz/search?q=${encodeURIComponent(lot.seller_name)}`
@@ -76,6 +81,23 @@ export function ActionBox({ lot }: { lot: Lot }) {
             </div>
             <div className="text-xs text-[var(--fg-mute)] mt-0.5">
               anticorruption.uz — rasmiy organ
+            </div>
+          </div>
+        </a>
+
+        <a
+          href={davaktivUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="action-tile group"
+        >
+          <span className="action-icon">🏛</span>
+          <div className="text-left">
+            <div className="font-semibold text-[var(--fg)]">
+              Davaktiv'ga signal
+            </div>
+            <div className="text-xs text-[var(--fg-mute)] mt-0.5">
+              gov.uz/davaktiv — rasmiy forma + tel.&nbsp;1082
             </div>
           </div>
         </a>

@@ -26,6 +26,14 @@ export function NavBar() {
               API
             </a>
             <span className="opacity-40">|</span>
+            <a
+              className="hover:text-white"
+              href="tel:1082"
+              title="Davaktiv call markaz — korrupsiya signali"
+            >
+              📞 1082
+            </a>
+            <span className="opacity-40">|</span>
             <Link className="hover:text-white" href="/methodology">
               Metodologiya
             </Link>
